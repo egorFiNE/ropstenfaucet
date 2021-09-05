@@ -7,7 +7,9 @@
     "serve": "vite preview"
   },
   "dependencies": {
+    "bootstrap": "^5.1.0",
     "dayjs": "^1.10.6",
+    "sass": "^1.39.0",
     "vue": "^3.2.6"
   },
   "devDependencies": {

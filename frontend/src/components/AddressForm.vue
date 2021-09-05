@@ -1,24 +1,38 @@
+<script setup>
+import Alert from './Alert.vue'
+</script>
+
 <template>
-  <div style="{ opacity: isLoading ? 0.5 : 1 }">
+  <div style="{ opacity: isLoading ? 0.5 : 1 }" class="form-faucet">
     <form @submit.prevent="giveMe" :disabled="isLoading">
-      <input v-model="address" @input="reset" :disabled="isLoading">
-      <button type="submit" :disabled="isLoading || !isValid">Gimme</button>
+      <div class="form-floating">
+        <input ref="input" type="text" v-model="address" @input="reset" :disabled="isLoading" class="form-control mb-2" id="address" placeholder="0x.....">
+        <label for="address">Your Ropsten address</label>
+      </div>
+
+      <button class="w-100 btn btn-lg btn-primary" type="submit" :disabled="isLoading || !isValid">Give me Ropsten eth!</button>
     </form>
 
-    <div v-if="state == 'success'">
-      Okay! Sent {{ $format18(amountSent) }} to {{ addressSent }} with tx <a :href="'https://ropsten.etherscan.io/tx/' + tx">{{ tx }}</a>.
-    </div>
+    <alert v-if="state == 'success'" kind="success">
+      <small>
+        Sent <b>{{ $format18(amountSent) }}</b> to {{ addressSent }} with tx hash <a :href="'https://ropsten.etherscan.io/tx/' + tx">{{ txHr }}</a>.
+      </small>
+    </alert>
 
-    <div v-else-if="state == 'limited'">
-      Oops! Limit engaged, please retry in {{ liftInHr }} at {{ liftAtHr }}
-    </div>
+    <alert v-else-if="state == 'limited'" kind="warning">
+      Address limited. Please retry in <b>{{ liftInHr }}</b> at <b>{{ liftAtHr }}.</b>
+    </alert>
 
-    <div v-else-if="state == 'empty'">
-      Oops! Faucet empty. <a href="https://twitter.com/egorfine">Hit me up on Twitter</a> so that I mine some more.
-    </div>
+    <alert v-else-if="state == 'empty'" kind="danger">
+      Faucet is empty. Please notify me on <a href="https://twitter.com/egorfine">Twitter</a> so that I mine some more rETH.
+    </alert>
 
-    <div v-else-if="state == 'fail'">
+    <alert v-else-if="state == 'fail'" kind="danger">
       {{ message }}
+    </alert>
+
+    <div v-else class="text-muted mt-1 small">
+      Please enter valid Ethereum address to get free Ropsten testnet ETH.
     </div>
   </div>
 </template>
@@ -33,7 +47,6 @@ dayjs.extend(localizedFormat)
 export default {
   data() {
     return {
-      // isLoading: false,
       state: 'idle',
 
       message: null,
@@ -60,7 +73,16 @@ export default {
 
     liftAtHr() {
       return dayjs.unix(this.liftAtUnixtime).format('LLL');
+    },
+
+    txHr() {
+      const _tx = (this.tx || '').trim();
+      return _tx.substr(0,6) + '..' + _tx.substr(_tx.length-6);
     }
+  },
+
+  mounted() {
+    this.$refs.input.focus();
   },
 
   methods: {

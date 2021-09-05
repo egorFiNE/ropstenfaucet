@@ -1,14 +1,14 @@
 <template>
-  <h1>Stats</h1>
-
   <div v-if="isLoading">
-    Loading...
+    Loading stats...
   </div>
 
   <div v-else>
-    Faucet balance: {{ $format18(balance) }}<br/>
-    Faucet address: <a :href="'https://ropsten.etherscan.io/address/' + address">{{ address }}</a><br/>
-    Giving today per address: {{ $format18(weiPerAddress) }}
+    <b>{{ $format18(balance) }}&nbsp;rETH</b> available now at faucet<br/>
+    <a class="small" :href="'https://ropsten.etherscan.io/address/' + address">{{ address }}</a><br/>
+    <br/>
+
+    <b>{{ $format18(weiPerAddress) }}&nbsp;rETH</b> daily limit per address.
   </div>
 </template>
 
@@ -24,14 +24,12 @@ export default {
   },
 
   mounted() {
-    this.loadStats();
+    this.loadStats().then(() => this.isLoading = false);
     setInterval(() => this.loadStats(), 15000);
   },
 
   methods: {
     async loadStats() {
-      this.isLoading = true;
-
       let statusCode = null;
       let json = null;
 
@@ -42,8 +40,6 @@ export default {
       } catch (e) {
         // console.error(e);
       }
-
-      this.isLoading = false;
 
       if (!json) {
         return;
