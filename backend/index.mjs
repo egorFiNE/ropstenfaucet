@@ -121,10 +121,10 @@ fastify.post('/api/gimme/',
       from: sponsor.address,
       to: address,
       value: weiPerAddress.toString(),
-      gas: web3.utils.toHex(22000),
-      maxFeePerGas: web3.utils.toHex(web3.utils.toWei('2', 'gwei')),
-      maxPriorityFeePerGas: web3.utils.toHex(web3.utils.toWei('1', 'gwei')),
-      nonce: 21
+      gas: web3.utils.toHex(50000),
+      maxFeePerGas: web3.utils.toHex(web3.utils.toWei('100', 'gwei')),
+      maxPriorityFeePerGas: web3.utils.toHex(web3.utils.toWei('5', 'gwei'))
+      // nonce: 21
     };
 
     const signed = await sponsor.signTransaction(tx);
