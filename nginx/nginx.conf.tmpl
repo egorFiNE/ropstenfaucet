@@ -1,0 +1,41 @@
+worker_processes 3;
+
+events {
+}
+
+http {
+	error_log /tmp/error.log;
+	access_log /tmp/access.log;
+	include mime.types;
+	default_type application/octet-stream;
+	sendfile on;
+	keepalive_timeout 65;
+
+	gzip on;
+
+	server {
+		server_name faucet.example.com;
+		listen 127.0.0.1:80;
+    # listen 443 ssl;
+
+    # ssl_certificate fullchain.pem;
+    # ssl_certificate_key privkey.pem;
+    # ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+    # ssl_prefer_server_ciphers on;
+    # ssl_dhparam dhparam.pem;
+
+		client_max_body_size 10M;
+
+		charset utf8;
+
+		root /some/where/ropstenfaucet/frontend-dist/;
+
+    location /api/ {
+      proxy_pass http://localhost:3090;
+      proxy_http_version 1.1;
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection "upgrade";
+      proxy_set_header Host      $host;
+    }
+	}
+}
