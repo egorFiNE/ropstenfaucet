@@ -104,4 +104,3 @@ dist
 .tern-port
 .env
 limits.json
-frontend-dist
