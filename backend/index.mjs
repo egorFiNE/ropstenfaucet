@@ -10,6 +10,8 @@ const isProduction = process.env.NODE_ENV === 'production';
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
 
 const weiPerAddressFilename = path.join(__dirname, 'wei-per-address.txt');
+let weiPerAddress = null;
+let faucetBalance = null;
 
 const EXPIRATION_SECONDS = 86400;
 const limitsFilename = path.join(__dirname, 'limits.json');
@@ -46,7 +48,11 @@ function expireLimits() {
 }
 
 function readWeiPerAddress() {
-  return BigInt(fs.readFileSync(weiPerAddressFilename).toString());
+  weiPerAddress = BigInt(fs.readFileSync(weiPerAddressFilename).toString());
+}
+
+async function readFaucetBalance() {
+  faucetBalance = await web3.eth.getBalance(sponsor.address);
 }
 
 const fastify = Fastify({
@@ -58,13 +64,11 @@ fastify.register(FastifyCors, {
 
 fastify.get('/api/stats/',
   async () => {
-    const balance = await web3.eth.getBalance(sponsor.address);
-
     return {
       success: true,
       address: sponsor.address,
-      balance,
-      weiPerAddress: readWeiPerAddress().toString()
+      balance: faucetBalance,
+      weiPerAddress: weiPerAddress.toString()
     };
   }
 );
@@ -104,10 +108,9 @@ fastify.post('/api/gimme/',
       };
     }
 
-    const amount = readWeiPerAddress();
     const faucetBalance = BigInt(await web3.eth.getBalance(sponsor.address));
 
-    if (faucetBalance < amount) {
+    if (faucetBalance < weiPerAddress) {
       return {
         success: false,
         isEmpty: true
@@ -117,7 +120,7 @@ fastify.post('/api/gimme/',
     const tx = {
       from: sponsor.address,
       to: address,
-      value: amount.toString(),
+      value: weiPerAddress.toString(),
       gas: web3.utils.toHex(22000),
       maxFeePerGas: web3.utils.toHex(web3.utils.toWei('2', 'gwei')),
       maxPriorityFeePerGas: web3.utils.toHex(web3.utils.toWei('1', 'gwei')),
@@ -157,15 +160,21 @@ fastify.post('/api/gimme/',
       reply.send({
         success: true,
         address,
-        amount: amount.toString(),
+        amount: weiPerAddress.toString(),
         tx
       });
     });
   }
 );
 
+readWeiPerAddress();
+setInterval(readWeiPerAddress, 15000);
+
 loadLimits();
 setInterval(expireLimits, 60000);
+
+readFaucetBalance();
+setInterval(readFaucetBalance, 60000);
 
 fastify.listen(process.env.LISTEN_PORT, process.env.LISTEN_HOST, (err, address) => {
   if (err) {
