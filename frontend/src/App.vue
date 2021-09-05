@@ -8,6 +8,8 @@ import Stats from './components/Stats.vue'
   <Stats/>
   <hr/>
   <AddressForm/>
+  <hr/>
+  FIXME footer and copy
 </template>
 
 <script>

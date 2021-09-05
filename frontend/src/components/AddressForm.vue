@@ -14,7 +14,7 @@
     </div>
 
     <div v-else-if="state == 'empty'">
-      Oops! Faucet empty. Ping me up on twitter to mine some more.
+      Oops! Faucet empty. <a href="https://twitter.com/egorfine">Hit me up on Twitter</a> so that I mine some more.
     </div>
 
     <div v-else-if="state == 'fail'">
