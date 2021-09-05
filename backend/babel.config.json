@@ -1,0 +1,9 @@
+{
+  "presets": [
+    "@babel/preset-env"
+  ],
+  "plugins": [
+    "@babel/plugin-syntax-top-level-await",
+    "@babel/plugin-syntax-class-properties"
+  ]
+}
