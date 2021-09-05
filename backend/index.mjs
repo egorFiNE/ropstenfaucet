@@ -85,9 +85,6 @@ fastify.post('/api/gimme/',
   },
 
   async (request, reply) => {
-    console.log("F");
-    console.log(request.query);
-
     const address = (request.body.address || '').trim();
 
     const isAddress = web3.utils.isAddress(address);
