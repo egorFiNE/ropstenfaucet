@@ -60,7 +60,7 @@ export default {
 
   computed: {
     isLoading() {
-      this.state == 'loading';
+      return this.state == 'loading';
     },
 
     isValid() {
