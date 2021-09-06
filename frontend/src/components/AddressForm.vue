@@ -1,7 +1,3 @@
-<script setup>
-import Alert from './Alert.vue'
-</script>
-
 <template>
   <div style="{ opacity: isLoading ? 0.5 : 1 }" class="form-faucet">
     <form @submit.prevent="giveMe" :disabled="isLoading">
@@ -38,6 +34,8 @@ import Alert from './Alert.vue'
 </template>
 
 <script>
+import Alert from './Alert.vue'
+
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
@@ -45,6 +43,10 @@ dayjs.extend(relativeTime);
 dayjs.extend(localizedFormat)
 
 export default {
+  components: {
+    Alert
+  },
+
   data() {
     return {
       state: 'idle',

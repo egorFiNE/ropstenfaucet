@@ -1,11 +1,4 @@
-<script setup>
-import AddressForm from './components/AddressForm.vue'
-import Stats from './components/Stats.vue'
-import Faq from './components/Faq.vue'
-</script>
-
 <template>
-
 <main class="container">
   <div class="row">
     <div class="col-6">
@@ -36,7 +29,17 @@ import Faq from './components/Faq.vue'
 </template>
 
 <script>
+import AddressForm from './components/AddressForm.vue'
+import Stats from './components/Stats.vue'
+import Faq from './components/Faq.vue'
+
 export default {
+  components: {
+    AddressForm,
+    Stats,
+    Faq
+  },
+
   data() {
     return {
       urlPrefix: import.meta.env.PROD ? '' : 'http://localhost:3090'
