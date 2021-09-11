@@ -13,6 +13,9 @@ const weiPerAddressFilename = path.join(__dirname, 'wei-per-address.txt');
 let weiPerAddress = null;
 let faucetBalance = null;
 
+let blockNumberCache = null;
+let blockNumberCacheUpdatedAtMs = 0;
+
 const EXPIRATION_SECONDS = 86400;
 const limitsFilename = path.join(__dirname, 'limits.json');
 let limits = {};
@@ -51,8 +54,17 @@ function readWeiPerAddress() {
   weiPerAddress = BigInt(fs.readFileSync(weiPerAddressFilename).toString());
 }
 
-async function readFaucetBalance() {
+async function updateFaucetBalance() {
   faucetBalance = await web3.eth.getBalance(sponsor.address);
+}
+
+async function getBlockNumber() {
+  if (Date.now() - blockNumberCacheUpdatedAtMs >= 10000) {
+    blockNumberCache = await web3.eth.getBlockNumber();
+    blockNumberCacheUpdatedAtMs = Date.now();
+  }
+
+  return blockNumberCache;
 }
 
 const fastify = Fastify({
@@ -64,10 +76,12 @@ fastify.register(FastifyCors, {
 
 fastify.get('/api/stats/',
   async () => {
+    const blockNumber = await getBlockNumber();
     return {
       success: true,
       address: sponsor.address,
       balance: faucetBalance,
+      blockNumber,
       weiPerAddress: weiPerAddress.toString()
     };
   }
@@ -173,8 +187,8 @@ setInterval(readWeiPerAddress, 15000);
 loadLimits();
 setInterval(expireLimits, 60000);
 
-readFaucetBalance();
-setInterval(readFaucetBalance, 60000);
+updateFaucetBalance();
+setInterval(updateFaucetBalance, 60000);
 
 fastify.listen(process.env.LISTEN_PORT, process.env.LISTEN_HOST, (err, address) => {
   if (err) {

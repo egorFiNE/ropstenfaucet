@@ -9,8 +9,19 @@
     <br/>
 
     <b>{{ $format18(weiPerAddress) }}&nbsp;rETH</b> daily limit per address.
+    <br/>
+    <br/>
+    <span class="blockNumber small">Current at block {{ blockNumber }}.</span>
+
   </div>
 </template>
+
+<style scoped>
+.blockNumber {
+  color: gray;
+  font-weight: 300;
+}
+</style>
 
 <script>
 export default {
@@ -19,7 +30,8 @@ export default {
       isLoading: true,
       balance: 0,
       weiPerAddress: 0,
-      address: ''
+      address: '',
+      blockNumber: ''
     };
   },
 
@@ -48,6 +60,7 @@ export default {
       this.balance = BigInt(json.balance);
       this.weiPerAddress = BigInt(json.weiPerAddress);
       this.address = json.address;
+      this.blockNumber = json.blockNumber;
     }
   }
 };
