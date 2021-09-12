@@ -11,12 +11,19 @@
     <b>{{ $format18(weiPerAddress) }}&nbsp;rETH</b> daily limit per address.
     <br/>
     <br/>
-    <span class="blockNumber small">Current at block {{ blockNumber }}.</span>
 
+    <span class="blockNumber small danger" v-if="!blockTimestamp">No last block information (stalled?)</span>
+    <span class="blockNumber small danger" v-else-if="isBlockTooOld">Stalled at block {{ blockNumber }} ({{ blockTimestampHr }})</span>
+    <span class="blockNumber small" v-else>Currently at block {{ blockNumber }}</span>
+    <br/>
   </div>
 </template>
 
 <style scoped>
+.danger {
+  color: rgb(167, 0, 0) !important;
+}
+
 .blockNumber {
   color: gray;
   font-weight: 300;
@@ -24,6 +31,10 @@
 </style>
 
 <script>
+import dayjs from 'dayjs';
+import localizedFormat from 'dayjs/plugin/localizedFormat';
+dayjs.extend(localizedFormat);
+
 export default {
   data() {
     return {
@@ -31,13 +42,38 @@ export default {
       balance: 0,
       weiPerAddress: 0,
       address: '',
-      blockNumber: ''
+      blockNumber: null,
+      blockTimestamp: null
     };
+  },
+
+  computed: {
+    blockAgeSeconds() {
+      return this.blockTimestamp ? Math.floor(Date.now() / 1000) - this.blockTimestamp : null;
+    },
+
+    blockTimestampHr() {
+      if (!this.blockTimestamp) {
+        return 'unknown';
+      }
+
+      return dayjs.unix(this.blockTimestamp).format('LLLL');
+
+      if (this.blockAgeSeconds < 60) {
+        return this.blockAgeSeconds + 's ago';
+      }
+
+      return "more than 1m ago";
+    },
+
+    isBlockTooOld() {
+      return this.blockAgeSeconds >= 60;
+    }
   },
 
   mounted() {
     this.loadStats().then(() => this.isLoading = false);
-    setInterval(() => this.loadStats(), 15000);
+    setInterval(() => this.loadStats(), 21000);
   },
 
   methods: {
@@ -61,6 +97,7 @@ export default {
       this.weiPerAddress = BigInt(json.weiPerAddress);
       this.address = json.address;
       this.blockNumber = json.blockNumber;
+      this.blockTimestamp = json.blockTimestamp;
     }
   }
 };
