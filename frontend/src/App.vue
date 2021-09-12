@@ -16,6 +16,9 @@
     <div class="col-6">
       <Faq/>
     </div>
+    <div class="col-6">
+      <ContactMe/>
+    </div>
   </div>
 
   <p class="mt-5 mb-3 text-muted">
@@ -32,12 +35,14 @@
 import AddressForm from './components/AddressForm.vue'
 import Stats from './components/Stats.vue'
 import Faq from './components/Faq.vue'
+import ContactMe from './components/ContactMe.vue'
 
 export default {
   components: {
     AddressForm,
     Stats,
-    Faq
+    Faq,
+    ContactMe
   },
 
   data() {
