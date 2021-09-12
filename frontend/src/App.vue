@@ -27,6 +27,8 @@
     <a class="ms-2" href="https://github.com/egorFiNE/ropstenfaucet">github</a>
     <span class="ms-2 separator">|</span>
     <a class="ms-2" href="https://twitter.com/egorFiNE">twitter</a>
+    <span class="ms-2 separator">|</span>
+    <a class="ms-2" href="mailto:me@egorfine.com">me@egorfine.com</a>
   </p>
 </main>
 </template>
