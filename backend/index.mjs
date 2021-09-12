@@ -14,6 +14,7 @@ let weiPerAddress = null;
 let faucetBalance = null;
 
 let blockNumberCache = null;
+let blockTimestampCache = null;
 let blockNumberCacheUpdatedAtMs = 0;
 
 const EXPIRATION_SECONDS = 86400;
@@ -59,12 +60,25 @@ async function updateFaucetBalance() {
 }
 
 async function getBlockNumber() {
-  if (Date.now() - blockNumberCacheUpdatedAtMs >= 10000) {
-    blockNumberCache = await web3.eth.getBlockNumber();
+  if (Date.now() - blockNumberCacheUpdatedAtMs >= 12000) {
+    let block = null;
+    try {
+      block = await web3.eth.getBlock('latest');
+    } catch (e) {
+      console.error("Cannot load block");
+      console.error(e);
+
+      blockNumberCache = null;
+      blockTimestampCache = null;
+      blockNumberCacheUpdatedAtMs = 0;
+
+      return;
+    }
+
+    blockNumberCache = block.number;
+    blockTimestampCache = block.timestamp;
     blockNumberCacheUpdatedAtMs = Date.now();
   }
-
-  return blockNumberCache;
 }
 
 const fastify = Fastify({
@@ -76,12 +90,14 @@ fastify.register(FastifyCors, {
 
 fastify.get('/api/stats/',
   async () => {
-    const blockNumber = await getBlockNumber();
+    await getBlockNumber();
+
     return {
       success: true,
       address: sponsor.address,
       balance: faucetBalance,
-      blockNumber,
+      blockNumber: blockNumberCache,
+      blockTimestamp: blockTimestampCache,
       weiPerAddress: weiPerAddress.toString()
     };
   }
