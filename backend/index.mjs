@@ -2,6 +2,7 @@ import 'dotenv/config';
 import path from 'path';
 import url from 'url';
 import fs from 'fs';
+import ms from 'ms';
 import Fastify from 'fastify';
 import FastifyCors from 'fastify-cors';
 import Web3 from 'web3';
@@ -17,6 +18,8 @@ let blockNumberCache = null;
 let blockTimestampCache = null;
 let blockNumberCacheUpdatedAtMs = 0;
 
+const BLOCK_EXPIRATION_MS = ms('15s');
+const RESTART_ON_FAIL_MS = ms('2s');
 const EXPIRATION_SECONDS = 86400;
 const limitsFilename = path.join(__dirname, 'limits.json');
 let limits = {};
@@ -60,7 +63,7 @@ async function updateFaucetBalance() {
 }
 
 async function getBlockNumber() {
-  if (Date.now() - blockNumberCacheUpdatedAtMs >= 12000) {
+  if (Date.now() - blockNumberCacheUpdatedAtMs >= BLOCK_EXPIRATION_MS) {
     let block = null;
     try {
       block = await web3.eth.getBlock('latest');
@@ -178,7 +181,7 @@ fastify.post('/api/gimme/',
       console.log("Failed sending to %s", address);
       console.log(e);
       console.log("Restarting");
-      setTimeout(() => process.exit(0), 2000);
+      setTimeout(() => process.exit(0), RESTART_ON_FAIL_MS);
 
       reply.send({
         success: false,
@@ -201,13 +204,19 @@ fastify.post('/api/gimme/',
 );
 
 readWeiPerAddress();
-setInterval(readWeiPerAddress, 15000);
+fs.watchFile(
+  weiPerAddressFilename, {
+    persistent: true,
+    interval: ms('30s')
+  },
+  readWeiPerAddress
+);
 
 loadLimits();
-setInterval(expireLimits, 60000);
+setInterval(expireLimits, ms('60s'));
 
 updateFaucetBalance();
-setInterval(updateFaucetBalance, 60000);
+setInterval(updateFaucetBalance, ms('60s'));
 
 fastify.listen(process.env.LISTEN_PORT, process.env.LISTEN_HOST, (err, address) => {
   if (err) {
