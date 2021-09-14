@@ -178,6 +178,9 @@ fastify.post('/api/gimme/',
     }
 
     result.on('error', e => {
+      limits[addressLC] = unixtime(); // eslint-disable-line require-atomic-updates
+      storeLimits();
+
       console.log("Failed sending to %s", address);
       console.log(e);
       console.log("Restarting");
