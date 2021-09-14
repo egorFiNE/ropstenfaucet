@@ -175,8 +175,11 @@ fastify.post('/api/gimme/',
     }
 
     result.on('error', e => {
-      console.log("Failed");
+      console.log("Failed sending to %s", address);
       console.log(e);
+      console.log("Restarting");
+      setTimeout(() => process.exit(0), 2000);
+
       reply.send({
         success: false,
         message: "Transaction failed"
