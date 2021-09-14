@@ -67,7 +67,7 @@ export default {
     },
 
     isBlockTooOld() {
-      return this.blockAgeSeconds >= 60;
+      return this.blockAgeSeconds >= 135;
     }
   },
 
