@@ -151,7 +151,7 @@ fastify.post('/api/gimme/',
       from: sponsor.address,
       to: address,
       value: weiPerAddress.toString(),
-      gas: web3.utils.toHex(50000),
+      gas: web3.utils.toHex(70000),
       maxFeePerGas: web3.utils.toHex(web3.utils.toWei('100', 'gwei')),
       maxPriorityFeePerGas: web3.utils.toHex(web3.utils.toWei('5', 'gwei'))
       // nonce: 21
