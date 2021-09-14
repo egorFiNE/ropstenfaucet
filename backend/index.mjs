@@ -183,8 +183,6 @@ fastify.post('/api/gimme/',
 
       console.log("Failed sending to %s", address);
       console.log(e);
-      console.log("Restarting");
-      setTimeout(() => process.exit(0), RESTART_ON_FAIL_MS);
 
       reply.send({
         success: false,
