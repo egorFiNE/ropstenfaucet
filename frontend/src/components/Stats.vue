@@ -30,75 +30,59 @@
 }
 </style>
 
-<script>
+<script setup>
+import { ref, onMounted, computed, inject } from 'vue';
 import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 dayjs.extend(localizedFormat);
 
-export default {
-  data() {
-    return {
-      isLoading: true,
-      balance: 0,
-      weiPerAddress: 0,
-      address: '',
-      blockNumber: null,
-      blockTimestamp: null
-    };
-  },
+const isLoading = ref(true);
+const balance = ref(0);
+const weiPerAddress = ref(0);
+const address = ref('');
+const blockNumber = ref(null);
+const blockTimestamp = ref(null);
 
-  computed: {
-    blockAgeSeconds() {
-      return this.blockTimestamp ? Math.floor(Date.now() / 1000) - this.blockTimestamp : null;
-    },
+const loadStats = async () => {
+  let json = null;
 
-    blockTimestampHr() {
-      if (!this.blockTimestamp) {
-        return 'unknown';
-      }
+  try {
+    const response = await window.fetch(inject('urlPrefix') + '/api/stats/');
+    json = await response.json();
+  } catch {}
 
-      return dayjs.unix(this.blockTimestamp).format('LLLL');
-
-      if (this.blockAgeSeconds < 60) {
-        return this.blockAgeSeconds + 's ago';
-      }
-
-      return "more than 1m ago";
-    },
-
-    isBlockTooOld() {
-      return this.blockAgeSeconds >= 135;
-    }
-  },
-
-  mounted() {
-    this.loadStats().then(() => this.isLoading = false);
-    setInterval(() => this.loadStats(), 21000);
-  },
-
-  methods: {
-    async loadStats() {
-      let statusCode = null;
-      let json = null;
-
-      try {
-        const response = await window.fetch(this.$root.urlPrefix + '/api/stats/');
-        statusCode = response.status;
-        json = await response.json();
-      } catch (e) {
-        // console.error(e);
-      }
-
-      if (!json) {
-        return;
-      }
-
-      this.balance = BigInt(json.balance);
-      this.weiPerAddress = BigInt(json.weiPerAddress);
-      this.address = json.address;
-      this.blockNumber = json.blockNumber;
-      this.blockTimestamp = json.blockTimestamp;
-    }
+  if (!json) {
+    return;
   }
+
+  balance.value = BigInt(json.balance);
+  weiPerAddress.value = BigInt(json.weiPerAddress);
+  address.value = json.address;
+  blockNumber.value = json.blockNumber;
+  blockTimestamp.value = json.blockTimestamp;
 };
+
+onMounted(async () => {
+  await loadStats();
+  isLoading.value = false;
+  setInterval(loadStats, 21000);
+});
+
+const blockAgeSeconds = computed(() => blockTimestamp.value ? Math.floor(Date.now() / 1000) - blockTimestamp.value : null);
+
+const blockTimestampHr = computed(() => {
+  if (!blockTimestamp.value) {
+    return 'unknown';
+  }
+
+  return dayjs.unix(blockTimestamp.value).format('LLLL');
+
+  if (blockAgeSeconds.value < 60) {
+    return blockAgeSeconds.value + 's ago';
+  }
+
+  return "more than 1m ago";
+});
+
+const isBlockTooOld = computed(() => (blockAgeSeconds.value >= 135));
 </script>

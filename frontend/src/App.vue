@@ -34,6 +34,8 @@
 </template>
 
 <script>
+import { provide } from 'vue';
+
 import AddressForm from './components/AddressForm.vue'
 import Stats from './components/Stats.vue'
 import Faq from './components/Faq.vue'
@@ -45,6 +47,10 @@ export default {
     Stats,
     Faq,
     ContactMe
+  },
+
+  setup() {
+    provide('urlPrefix', import.meta.env.PROD ? '' : 'http://localhost:3090');
   },
 
   data() {
