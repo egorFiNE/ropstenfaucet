@@ -31,15 +31,11 @@ import { provide } from 'vue';
 
 import AddressForm from './components/AddressForm.vue'
 import Stats from './components/Stats.vue'
-import Faq from './components/Faq.vue'
-import ContactMe from './components/ContactMe.vue'
 
 export default {
   components: {
     AddressForm,
-    Stats,
-    Faq,
-    ContactMe
+    Stats
   },
 
   setup() {
