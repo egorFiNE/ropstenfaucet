@@ -5,7 +5,7 @@
 
   <div v-else>
     <b>{{ $format18(balance) }}&nbsp;rETH</b> available now at faucet<br/>
-    <a class="small" :href="'https://ropsten.etherscan.io/address/' + address">{{ address }}</a><br/>
+    <a class="small" :href="'https://ropsten.etherscan.io/address/' + address">{{ addressHr }}</a><br/>
     <br/>
 
     <b>{{ $format18(weiPerAddress) }}&nbsp;rETH</b> daily limit per address.
@@ -82,6 +82,14 @@ const blockTimestampHr = computed(() => {
   }
 
   return "more than 1m ago";
+});
+
+const addressHr = computed(() => {
+  if (!address.value) {
+    return '';
+  }
+
+  return address.value.substr(0, 6) + ' ... ' + address.value.substr(-4);
 });
 
 const isBlockTooOld = computed(() => (blockAgeSeconds.value >= 135));

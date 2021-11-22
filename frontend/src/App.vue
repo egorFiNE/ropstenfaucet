@@ -1,30 +1,23 @@
 <template>
-<main class="container">
+<main class="container mt-5">
   <div class="row">
-    <div class="col-6">
-      <h1 class="h3 mb-3 fw-normal">Ropsten testnet faucet</h1>
+    <div class="col-md-6 col-sm-12">
+      <h1 class="h3 mt-3 mb-4 fw-normal">Ropsten testnet faucet</h1>
       <AddressForm/>
     </div>
 
-    <div class="col-6 text-muted">
-      <h1 class="h3 mb-3 fw-light">Faucet stats</h1>
+    <div class="col-md-6 col-sm-12 text-muted">
+      <h1 class="h3 mt-3 mb-4 fw-light">Faucet stats</h1>
       <Stats/>
     </div>
   </div>
 
-  <div class="row mt-5">
-    <div class="col-6">
-      <Faq/>
-    </div>
-    <div class="col-6">
-      <ContactMe/>
-    </div>
-  </div>
-
-  <p class="mt-5 mb-3 text-muted">
+  <p class="mt-5 mb-1 text-muted">
     &copy; 2021 Egor Egorov
-    <span class="ms-2 separator">|</span>
-    <a class="ms-2" href="https://github.com/egorFiNE/ropstenfaucet">github</a>
+  </p>
+
+  <p class="mb-3 text-muted">
+    <a href="https://github.com/egorFiNE/ropstenfaucet">github</a>
     <span class="ms-2 separator">|</span>
     <a class="ms-2" href="https://twitter.com/egorFiNE">twitter</a>
     <span class="ms-2 separator">|</span>
