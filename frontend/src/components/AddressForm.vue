@@ -95,6 +95,13 @@ export default {
     },
 
     async giveMe() {
+      grecaptcha.ready(async () => {
+        const token = await grecaptcha.execute('6LdUTFcdAAAAAH6Xu8p8x8eBdmAOzjinOn5Fomk_', { action: 'submit' });
+        this.proceedWithRequest(token);
+      });
+    },
+
+    async proceedWithRequest(token) {
       this.state = 'loading';
 
       this.tx = null;
@@ -106,7 +113,7 @@ export default {
           'Content-Type': 'application/json'
         },
         credentials: 'same-origin',
-        body: JSON.stringify({ address: this.address })
+        body: JSON.stringify({ address: this.address, token })
       };
 
       let json = null;

@@ -3,6 +3,7 @@ import path from 'path';
 import url from 'url';
 import fs from 'fs';
 import ms from 'ms';
+import axios from 'axios';
 import Fastify from 'fastify';
 import FastifyCors from 'fastify-cors';
 import Web3 from 'web3';
@@ -19,13 +20,36 @@ let blockTimestampCache = null;
 let blockNumberCacheUpdatedAtMs = 0;
 
 const BLOCK_EXPIRATION_MS = ms('15s');
-const RESTART_ON_FAIL_MS = ms('2s');
 const EXPIRATION_SECONDS = 86400;
 const limitsFilename = path.join(__dirname, 'limits.json');
 let limits = {};
 
 const web3 = new Web3(process.env.ETHEREUM_RPC);
 const sponsor = web3.eth.accounts.privateKeyToAccount(process.env.PRIVATE_KEY);
+
+async function verifyRecaptcha(token, ip = null) {
+  const data = {
+    secret: process.env.RECAPTCHA_SECRET_KEY,
+    response: token
+  };
+
+  if (ip) {
+    data.remoteip = ip;
+  }
+
+  const response = await axios({
+    url: 'https://www.google.com/recaptcha/api/siteverify',
+    params: data,
+    metohd: 'POST',
+    validateStatus: () => true,
+  });
+
+  if (!response.data?.success) {
+    return false;
+  }
+
+  return response.data?.score >= 0.5;
+}
 
 function loadLimits() {
   if (!fs.existsSync(limitsFilename)) {
@@ -114,14 +138,25 @@ fastify.post('/api/gimme/',
         properties: {
           address: {
             type: 'string'
+          },
+          token: {
+            type: 'string'
           }
         },
-        required: [ 'address' ]
+        required: [ 'address', 'token' ]
       }
     }
   },
 
   async (request, reply) => {
+    const isCaptchaValidated = await verifyRecaptcha(request.body.token, request.headers['x-real-ip']);
+    if (!isCaptchaValidated) {
+      return {
+        success: true,
+        message: "I believe you are a bot"
+      };
+    }
+
     const address = (request.body.address || '').trim();
 
     const isAddress = web3.utils.isAddress(address);
