@@ -104,3 +104,4 @@ dist
 .tern-port
 .env
 limits.json
+ips.json
