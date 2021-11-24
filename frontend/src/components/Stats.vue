@@ -31,7 +31,7 @@
 </style>
 
 <script setup>
-import { ref, onMounted, computed, inject } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 dayjs.extend(localizedFormat);
@@ -47,7 +47,7 @@ const loadStats = async () => {
   let json = null;
 
   try {
-    const response = await window.fetch(inject('urlPrefix') + '/api/stats/');
+    const response = await window.fetch(window.urlPrefix + '/api/stats/');
     json = await response.json();
   } catch {}
 
@@ -65,7 +65,7 @@ const loadStats = async () => {
 onMounted(async () => {
   await loadStats();
   isLoading.value = false;
-  setInterval(loadStats, 21000);
+  setInterval(loadStats, 30000);
 });
 
 const blockAgeSeconds = computed(() => blockTimestamp.value ? Math.floor(Date.now() / 1000) - blockTimestamp.value : null);

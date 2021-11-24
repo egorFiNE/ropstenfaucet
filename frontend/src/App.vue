@@ -27,8 +27,6 @@
 </template>
 
 <script>
-import { provide } from 'vue';
-
 import AddressForm from './components/AddressForm.vue'
 import Stats from './components/Stats.vue'
 
@@ -39,7 +37,7 @@ export default {
   },
 
   setup() {
-    provide('urlPrefix', import.meta.env.PROD ? '' : 'http://localhost:3090');
+    window.urlPrefix = import.meta.env.PROD ? '' : 'http://localhost:3090';
   },
 
   data() {
