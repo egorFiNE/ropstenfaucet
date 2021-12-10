@@ -19,7 +19,7 @@ async function findNonceInTransactions(transactions) {
 
 async function findNonce() {
   let blockNumber = await web3.eth.getBlockNumber();
-  const minBlockNumber = blockNumber - (7000 * 31); // about one month to look back
+  const minBlockNumber = blockNumber - 7000;
 
   do {
     const block = await web3.eth.getBlock(blockNumber);
