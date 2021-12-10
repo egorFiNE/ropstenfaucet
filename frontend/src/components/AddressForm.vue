@@ -23,6 +23,10 @@
       Faucet is empty. Please notify me on <a href="https://twitter.com/egorfine">Twitter</a> so that I mine some more rETH.
     </alert>
 
+    <alert v-else-if="state == 'bot'" kind="warning">
+      Unfortunately, Google Recaptcha failed.
+    </alert>
+
     <alert v-else-if="state == 'fail'" kind="danger">
       {{ message }}
     </alert>
@@ -138,6 +142,9 @@ export default {
 
         } else if (json.isEmpty) {
           this.state = 'empty';
+
+        } else if (json.isBot) {
+          this.state = 'bot';
 
         } else {
           this.state = 'fail';
