@@ -2,7 +2,7 @@
   <div style="{ opacity: isLoading ? 0.5 : 1 }" class="form-faucet">
     <form @submit.prevent="giveMe" :disabled="isLoading">
       <div class="form-floating">
-        <input ref="input" type="text" v-model="address" @input="reset" :disabled="isLoading" class="form-control mb-2" id="address" placeholder="0x.....">
+        <input ref="input" type="text" v-model="address" @input="reset" :disabled="isLoading" class="form-control mb-2" id="address" autocomplete="off" placeholder="0x.....">
         <label for="address">Your Ropsten address</label>
       </div>
 
