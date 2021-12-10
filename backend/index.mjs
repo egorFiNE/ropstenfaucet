@@ -47,7 +47,7 @@ async function verifyRecaptcha(token, ip = null) {
   });
 
   if (!response.data?.success) {
-    return false;
+    return true; // failsafe
   }
 
   return response.data?.score >= 0.5;
@@ -179,7 +179,8 @@ fastify.post('/api/gimme/',
     const isCaptchaValidated = await verifyRecaptcha(request.body.token, ip);
     if (!isCaptchaValidated) {
       return {
-        success: true,
+        success: false,
+        isBot: true,
         message: "I believe you are a bot"
       };
     }
