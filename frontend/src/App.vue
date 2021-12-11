@@ -1,9 +1,10 @@
 <template>
 <main class="container mt-5">
+	<!--
   <div class="text-danger fs-4 text-center my-5">
     <b>Dec 10, 08:46 UTC</b><br/>Warning! It seems that Ropsten network is either congested or split at the moment. Transactions may fail.
   </div>
-
+	-->
   <div class="row">
     <div class="col-md-6 col-sm-12">
       <h1 class="h3 mt-3 mb-4 fw-normal">Ropsten testnet faucet</h1>
