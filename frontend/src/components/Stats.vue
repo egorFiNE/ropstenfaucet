@@ -30,37 +30,43 @@
 }
 </style>
 
-<script setup>
+<script>
 import { ref, onMounted, computed, getCurrentInstance } from 'vue';
 import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 dayjs.extend(localizedFormat);
 
-const app = getCurrentInstance();
+export default {
+  computed: {
+    blockAgeSeconds() {
+      return this.$root.blockTimestamp ? Math.floor(Date.now() / 1000) - this.$root.blockTimestamp : null;
+    },
 
-const blockAgeSeconds = computed(() => app.ctx.$root.blockTimestamp ? Math.floor(Date.now() / 1000) - app.ctx.$root.blockTimestamp : null);
+    blockTimestampHr() {
+      if (!this.$root.blockTimestamp) {
+        return 'unknown';
+      }
 
-const blockTimestampHr = computed(() => {
-  if (!app.ctx.$root.blockTimestamp) {
-    return 'unknown';
+      return dayjs.unix(this.$root.blockTimestamp).format('LLLL');
+
+      if (this.$root.blockAgeSeconds < 60) {
+        return this.$root.blockAgeSeconds + 's ago';
+      }
+
+      return "more than 1m ago";
+    },
+
+    isBlockTooOld() {
+      this.$root.blockAgeSeconds >= 135;
+    },
+
+    addressHr() {
+      if (!this.$root.address) {
+        return '';
+      }
+
+      return this.$root.address.substr(0, 6) + ' ... ' + this.$root.address.substr(-4);
+    }
   }
-
-  return dayjs.unix(app.ctx.$root.blockTimestamp).format('LLLL');
-
-  if (app.ctx.$root.blockAgeSeconds < 60) {
-    return app.ctx.$root.blockAgeSeconds + 's ago';
-  }
-
-  return "more than 1m ago";
-});
-
-const isBlockTooOld = computed(() => (app.ctx.$root.blockAgeSeconds >= 135));
-
-const addressHr = computed(() => {
-  if (!app.ctx.$root.address) {
-    return '';
-  }
-
-  return app.ctx.$root.address.substr(0, 6) + ' ... ' + app.ctx.$root.address.substr(-4);
-});
+}
 </script>
