@@ -1,20 +1,20 @@
 <template>
-  <div v-if="isLoading">
+  <div v-if="$root.isStatsLoading">
     Loading stats...
   </div>
 
   <div v-else>
-    <b>{{ $format18(balance) }}&nbsp;rETH</b> available now at faucet<br/>
-    <a class="small" :href="'https://ropsten.etherscan.io/address/' + address">{{ addressHr }}</a><br/>
+    <b>{{ $format18($root.balance) }}&nbsp;rETH</b> available now at faucet<br/>
+    <a class="small" :href="'https://ropsten.etherscan.io/address/' + $root.address">{{ addressHr }}</a><br/>
     <br/>
 
-    <b>{{ $format18(weiPerAddress) }}&nbsp;rETH</b> daily limit per address.
+    <b>{{ $format18($root.weiPerAddress) }}&nbsp;rETH</b> daily limit per address.
     <br/>
     <br/>
 
-    <span class="blockNumber small danger" v-if="!blockTimestamp">No last block information (stalled?)</span>
-    <span class="blockNumber small danger" v-else-if="isBlockTooOld">Stalled at block {{ blockNumber }} ({{ blockTimestampHr }})</span>
-    <span class="blockNumber small" v-else>Currently at block {{ blockNumber }}</span>
+    <span class="blockNumber small danger" v-if="!$root.blockTimestamp">No last block information (stalled?)</span>
+    <span class="blockNumber small danger" v-else-if="isBlockTooOld">Stalled at block {{ $root.blockNumber }} ({{ blockTimestampHr }})</span>
+    <span class="blockNumber small" v-else>Currently at block {{ $root.blockNumber }}</span>
     <br/>
   </div>
 </template>
@@ -31,66 +31,36 @@
 </style>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, getCurrentInstance } from 'vue';
 import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 dayjs.extend(localizedFormat);
 
-const isLoading = ref(true);
-const balance = ref(0);
-const weiPerAddress = ref(0);
-const address = ref('');
-const blockNumber = ref(null);
-const blockTimestamp = ref(null);
+const app = getCurrentInstance();
 
-const loadStats = async () => {
-  let json = null;
-
-  try {
-    const response = await window.fetch(window.urlPrefix + '/api/stats/');
-    json = await response.json();
-  } catch {}
-
-  if (!json) {
-    return;
-  }
-
-  balance.value = BigInt(json.balance);
-  weiPerAddress.value = BigInt(json.weiPerAddress);
-  address.value = json.address;
-  blockNumber.value = json.blockNumber;
-  blockTimestamp.value = json.blockTimestamp;
-};
-
-onMounted(async () => {
-  await loadStats();
-  isLoading.value = false;
-  setInterval(loadStats, 30000);
-});
-
-const blockAgeSeconds = computed(() => blockTimestamp.value ? Math.floor(Date.now() / 1000) - blockTimestamp.value : null);
+const blockAgeSeconds = computed(() => app.ctx.$root.blockTimestamp ? Math.floor(Date.now() / 1000) - app.ctx.$root.blockTimestamp : null);
 
 const blockTimestampHr = computed(() => {
-  if (!blockTimestamp.value) {
+  if (!app.ctx.$root.blockTimestamp) {
     return 'unknown';
   }
 
-  return dayjs.unix(blockTimestamp.value).format('LLLL');
+  return dayjs.unix(app.ctx.$root.blockTimestamp).format('LLLL');
 
-  if (blockAgeSeconds.value < 60) {
-    return blockAgeSeconds.value + 's ago';
+  if (app.ctx.$root.blockAgeSeconds < 60) {
+    return app.ctx.$root.blockAgeSeconds + 's ago';
   }
 
   return "more than 1m ago";
 });
 
+const isBlockTooOld = computed(() => (app.ctx.$root.blockAgeSeconds >= 135));
+
 const addressHr = computed(() => {
-  if (!address.value) {
+  if (!app.ctx.$root.address) {
     return '';
   }
 
-  return address.value.substr(0, 6) + ' ... ' + address.value.substr(-4);
+  return app.ctx.$root.address.substr(0, 6) + ' ... ' + app.ctx.$root.address.substr(-4);
 });
-
-const isBlockTooOld = computed(() => (blockAgeSeconds.value >= 135));
 </script>
