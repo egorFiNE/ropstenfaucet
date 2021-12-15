@@ -50,7 +50,7 @@ async function verifyRecaptcha(token, ip = null) {
     return true; // failsafe
   }
 
-  return response.data?.score >= 0.5;
+  return response.data?.score >= 0.7;
 }
 
 function loadLimits() {
