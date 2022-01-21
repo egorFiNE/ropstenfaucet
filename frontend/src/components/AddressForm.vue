@@ -6,7 +6,7 @@
         <label for="address">Your Ropsten address</label>
       </div>
 
-      <button class="w-100 btn btn-lg btn-primary" type="submit" :disabled="isLoading || !isValid">Give me Ropsten eth!</button>
+      <button class="w-100 btn btn-lg btn-primary" type="submit" :disabled="isLoading || !isValid">Give me Ropsten ETH!</button>
     </form>
 
     <alert v-if="state == 'success'" kind="success">
