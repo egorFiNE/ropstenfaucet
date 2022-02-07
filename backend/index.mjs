@@ -5,12 +5,14 @@ import fs from 'fs';
 import ms from 'ms';
 import axios from 'axios';
 import Fastify from 'fastify';
+import async from 'async';
 import FastifyCors from 'fastify-cors';
 import Web3 from 'web3';
 
 const isProduction = process.env.NODE_ENV === 'production';
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
 
+const NONCE_FILENAME = path.join(__dirname, 'nonce.txt');
 const weiPerAddressFilename = path.join(__dirname, 'wei-per-address.txt');
 let weiPerAddress = null;
 let faucetBalance = null;
@@ -18,6 +20,10 @@ let faucetBalance = null;
 let blockNumberCache = null;
 let blockTimestampCache = null;
 let blockNumberCacheUpdatedAtMs = 0;
+
+let queue = null;
+let nonce = null;
+let isExitRequested = false;
 
 const BLOCK_EXPIRATION_MS = ms('15s');
 const EXPIRATION_SECONDS = 86400;
@@ -133,6 +139,48 @@ async function getBlockNumber() {
   }
 }
 
+async function executeTransaction({ address, ip }) {
+  nonce++;
+
+  fs.writeFileSync(NONCE_FILENAME, nonce.toString() + "\n");
+
+  console.log("%s to %s: executing", nonce, address);
+
+  const addressLC = address.toLowerCase();
+
+  const tx = {
+    from: sponsor.address,
+    to: address,
+    value: weiPerAddress.toString(),
+    gas: web3.utils.toHex(70000),
+    maxFeePerGas: web3.utils.toHex(web3.utils.toWei('100', 'gwei')),
+    maxPriorityFeePerGas: web3.utils.toHex(web3.utils.toWei('5', 'gwei')),
+    nonce
+  };
+
+  const signed = await sponsor.signTransaction(tx);
+
+  try {
+    const promiEvent = web3.eth.sendSignedTransaction(signed.rawTransaction);
+    promiEvent.once('transactionHash', hash => console.log("%s to %s: %s", nonce, address, hash));
+
+    await promiEvent;
+
+    limits[addressLC] = unixtime(); // eslint-disable-line require-atomic-updates
+    ips[ip] = unixtime(); // eslint-disable-line require-atomic-updates
+
+  } catch (e) {
+    console.error("SEND TRANSACTION FAILED");
+    console.error(e);
+    delete limits[addressLC];
+    delete ips[ip];
+
+  } finally {
+    storeLimits();
+    storeIps();
+  }
+}
+
 const fastify = Fastify({
   logger: !isProduction
 });
@@ -174,6 +222,13 @@ fastify.post('/api/gimme/',
   },
 
   async (request, reply) => {
+    if (isExitRequested) {
+      return {
+        success: false,
+        isExit: true
+      };
+    }
+
     const ip = request.headers['x-real-ip'] || '0.0.0.0';
 
     const isCaptchaValidated = await verifyRecaptcha(request.body.token, ip);
@@ -221,63 +276,13 @@ fastify.post('/api/gimme/',
       };
     }
 
-    const tx = {
-      from: sponsor.address,
-      to: address,
-      value: weiPerAddress.toString(),
-      gas: web3.utils.toHex(70000),
-      maxFeePerGas: web3.utils.toHex(web3.utils.toWei('100', 'gwei')),
-      maxPriorityFeePerGas: web3.utils.toHex(web3.utils.toWei('5', 'gwei'))
-      // nonce: 21
+    queue.push({ address, ip });
+
+    return {
+      success: true,
+      address,
+      amount: weiPerAddress.toString()
     };
-
-    const signed = await sponsor.signTransaction(tx);
-
-    let result = null;
-    try {
-      result = web3.eth.sendSignedTransaction(signed.rawTransaction);
-    } catch (e) {
-      console.error("SEND TR");
-      console.error(e);
-    }
-
-    if (!result) {
-      return {
-        success: false,
-        message: "Cannot init transaction"
-      };
-    }
-
-    result.on('error', e => {
-      limits[addressLC] = unixtime(); // eslint-disable-line require-atomic-updates
-      storeLimits();
-
-      ips[ip] = unixtime(); // eslint-disable-line require-atomic-updates
-      storeIps();
-
-      console.log("Failed sending to %s", address);
-      console.log(e);
-
-      reply.send({
-        success: false,
-        message: "Transaction failed"
-      });
-    });
-
-    result.once('transactionHash', tx => {
-      limits[addressLC] = unixtime(); // eslint-disable-line require-atomic-updates
-      storeLimits();
-
-      ips[ip] = unixtime(); // eslint-disable-line require-atomic-updates
-      storeIps();
-
-      reply.send({
-        success: true,
-        address,
-        amount: weiPerAddress.toString(),
-        tx
-      });
-    });
   }
 );
 
@@ -298,6 +303,23 @@ setInterval(expireIps, ms('120s'));
 updateFaucetBalance();
 setInterval(updateFaucetBalance, ms('60s'));
 
+nonce = parseInt(fs.readFileSync(NONCE_FILENAME).toString());
+console.log("Starting with nonce %d", nonce);
+
+queue = async.queue(executeTransaction, 1);
+
+process.on('SIGINT', async () => {
+  console.log("Got SIGINT");
+  isExitRequested = true;
+
+  fastify.close();
+
+  await queue.drain();
+  console.log("Queue drained, exit");
+
+  process.exit(0);
+});
+
 fastify.listen(process.env.LISTEN_PORT, process.env.LISTEN_HOST, (err, address) => {
   if (err) {
     console.log(err);
@@ -310,3 +332,4 @@ fastify.listen(process.env.LISTEN_PORT, process.env.LISTEN_HOST, (err, address) 
     process.send('ready');
   }
 });
+

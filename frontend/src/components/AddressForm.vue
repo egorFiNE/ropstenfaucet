@@ -11,7 +11,7 @@
 
     <alert v-if="state == 'success'" kind="success">
       <small>
-        Sent <b>{{ $format18(amountSent) }}</b> to {{ addressSent }} with tx hash <a :href="'https://ropsten.etherscan.io/tx/' + tx">{{ txHr }}</a>.
+        Sucessfully queued <b>{{ $format18(amountSent) }}</b> to {{ addressSent }}. Please expect rETH to your address within next few minutes.
       </small>
     </alert>
 
@@ -24,7 +24,11 @@
     </alert>
 
     <alert v-else-if="state == 'bot'" kind="warning">
-      Unfortunately, Google Recaptcha failed.
+      Unfortunately, Google Recaptcha verification failed.
+    </alert>
+
+    <alert v-else-if="state == 'exit'" kind="warning">
+      Faucet is restarting now, please try again just a bit later.
     </alert>
 
     <alert v-else-if="state == 'fail'" kind="danger">
@@ -59,7 +63,6 @@ export default {
       address: '',
       addressSent: '',
       amountSent: 0n,
-      tx: null,
       liftAtUnixtime: 0
     };
   },
@@ -79,11 +82,6 @@ export default {
 
     liftAtHr() {
       return dayjs.unix(this.liftAtUnixtime).format('LLL');
-    },
-
-    txHr() {
-      const _tx = (this.tx || '').trim();
-      return _tx.substr(0,6) + '..' + _tx.substr(_tx.length-6);
     }
   },
 
@@ -94,7 +92,6 @@ export default {
   methods: {
     reset() {
       this.state = 'idle';
-      this.tx = null;
       this.message = '';
     },
 
@@ -108,7 +105,6 @@ export default {
     async proceedWithRequest(token) {
       this.state = 'loading';
 
-      this.tx = null;
       this.message = '';
 
       const options = {
@@ -146,6 +142,9 @@ export default {
         } else if (json.isBot) {
           this.state = 'bot';
 
+        } else if (json.isExit) {
+          this.state = 'exit';
+
         } else {
           this.state = 'fail';
           this.message = json.message || "Oops";
@@ -155,11 +154,9 @@ export default {
       }
 
       this.state = 'success';
-
-      this.tx = json.tx;
+      this.address = '';
       this.addressSent = json.address;
       this.amountSent = BigInt(json.amount);
-      this.address = '';
     }
   }
 };
