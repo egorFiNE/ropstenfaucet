@@ -312,11 +312,13 @@ process.on('SIGINT', async () => {
   console.log("Got SIGINT");
   isExitRequested = true;
 
+  try {
+    await queue.drain(() => console.log("Drained callback"));
+  } catch {}
+
   fastify.close();
 
-  await queue.drain();
   console.log("Queue drained, exit");
-
   process.exit(0);
 });
 
