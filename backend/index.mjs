@@ -153,7 +153,7 @@ async function getBlockNumber() {
 async function executeTransaction({ address, ip }) {
   nonce++;
 
-  console.log("%s to %s: executing", nonce, address);
+  console.log("[%s] %s to %s: executing", (new Date()).toISOString(), nonce, address);
 
   const addressLC = address.toLowerCase();
 
@@ -171,9 +171,11 @@ async function executeTransaction({ address, ip }) {
 
   try {
     const promiEvent = web3.eth.sendSignedTransaction(signed.rawTransaction);
-    promiEvent.once('transactionHash', hash => console.log("%s to %s: %s", nonce, address, hash));
+    promiEvent.once('transactionHash', hash => console.log("[%s] %s to %s: %s", (new Date()).toISOString(), nonce, address, hash));
 
     await promiEvent;
+
+    promiEvent.once('transactionHash', hash => console.log("[%s] %s to %s: %s mined", (new Date()).toISOString(), nonce, address, hash));
 
     limits[addressLC] = unixtime(); // eslint-disable-line require-atomic-updates
     ips[ip] = unixtime(); // eslint-disable-line require-atomic-updates
