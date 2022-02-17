@@ -176,7 +176,7 @@ async function executeTransaction({ address, ip }) {
 
     await promiEvent;
 
-    console.log("[%s] %s to %s: %s mined", (new Date()).toISOString(), nonce, address, hash);
+    console.log("[%s] %s to %s: mined", (new Date()).toISOString(), nonce, address);
 
     limits[addressLC] = unixtime(); // eslint-disable-line require-atomic-updates
     ips[ip] = unixtime(); // eslint-disable-line require-atomic-updates
