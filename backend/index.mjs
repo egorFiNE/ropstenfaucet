@@ -164,7 +164,7 @@ async function executeTransaction({ address, ip }) {
     const promiEvent = web3.eth.sendSignedTransaction(signed.rawTransaction);
     promiEvent.once('transactionHash', hash => console.log("%s to %s: %s", nonce, address, hash));
 
-    await promiEvent;
+    // await promiEvent; // let's say we trust this not to fail
 
     limits[addressLC] = unixtime(); // eslint-disable-line require-atomic-updates
     ips[ip] = unixtime(); // eslint-disable-line require-atomic-updates
