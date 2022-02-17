@@ -32,6 +32,8 @@ const ipsFilename = path.join(__dirname, 'ips.json');
 let limits = {};
 let ips = {};
 
+const WHITE_LIST = (process.env.WHITE_LIST || '').trim().toLowerCase().replace(/\s+/g, ' ').split(' ');
+
 const web3 = new Web3(process.env.ETHEREUM_RPC);
 const sponsor = web3.eth.accounts.privateKeyToAccount(process.env.PRIVATE_KEY);
 
@@ -262,20 +264,23 @@ fastify.post('/api/gimme/',
     }
 
     const addressLC = address.toLowerCase();
-    if (limits[addressLC]) {
-      return {
-        success: false,
-        isLimited: true,
-        liftAtUnixtime: limits[addressLC] + EXPIRATION_SECONDS
-      };
-    }
 
-    if (ips[ip]) {
-      return {
-        success: false,
-        isLimited: true,
-        liftAtUnixtime: ips[ip] + EXPIRATION_SECONDS
-      };
+    if (!WHITE_LIST.includes(addressLC)) {
+      if (limits[addressLC]) {
+        return {
+          success: false,
+          isLimited: true,
+          liftAtUnixtime: limits[addressLC] + EXPIRATION_SECONDS
+        };
+      }
+
+      if (ips[ip]) {
+        return {
+          success: false,
+          isLimited: true,
+          liftAtUnixtime: ips[ip] + EXPIRATION_SECONDS
+        };
+      }
     }
 
     const faucetBalance = BigInt(await web3.eth.getBalance(sponsor.address));
