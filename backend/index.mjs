@@ -83,6 +83,15 @@ function storeIps() {
   fs.writeFileSync(ipsFilename, JSON.stringify(ips, null, "\t"));
 }
 
+function storeNonce() {
+  fs.writeFileSync(NONCE_FILENAME, nonce.toString() + "\n");
+}
+
+function loadNonce() {
+  nonce = parseInt(fs.readFileSync(NONCE_FILENAME).toString());
+}
+
+
 function unixtime() {
   return Math.floor(Date.now() / 1000);
 }
@@ -142,8 +151,6 @@ async function getBlockNumber() {
 async function executeTransaction({ address, ip }) {
   nonce++;
 
-  fs.writeFileSync(NONCE_FILENAME, nonce.toString() + "\n");
-
   console.log("%s to %s: executing", nonce, address);
 
   const addressLC = address.toLowerCase();
@@ -164,7 +171,7 @@ async function executeTransaction({ address, ip }) {
     const promiEvent = web3.eth.sendSignedTransaction(signed.rawTransaction);
     promiEvent.once('transactionHash', hash => console.log("%s to %s: %s", nonce, address, hash));
 
-    // await promiEvent; // let's say we trust this not to fail
+    await promiEvent;
 
     limits[addressLC] = unixtime(); // eslint-disable-line require-atomic-updates
     ips[ip] = unixtime(); // eslint-disable-line require-atomic-updates
@@ -172,10 +179,14 @@ async function executeTransaction({ address, ip }) {
   } catch (e) {
     console.error("SEND TRANSACTION FAILED");
     console.error(e);
+
+    nonce--;
+
     delete limits[addressLC];
     delete ips[ip];
 
   } finally {
+    storeNonce();
     storeLimits();
     storeIps();
   }
@@ -303,7 +314,7 @@ setInterval(expireIps, ms('120s'));
 updateFaucetBalance();
 setInterval(updateFaucetBalance, ms('2m'));
 
-nonce = parseInt(fs.readFileSync(NONCE_FILENAME).toString());
+loadNonce();
 console.log("Starting with nonce %d", nonce);
 
 queue = async.queue(executeTransaction, 1);
