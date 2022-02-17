@@ -232,7 +232,7 @@ fastify.post('/api/gimme/',
     }
   },
 
-  async (request, reply) => {
+  async request => {
     if (isExitRequested) {
       return {
         success: false,
@@ -325,7 +325,9 @@ process.on('SIGINT', async () => {
 
   try {
     await queue.drain(() => console.log("Drained callback"));
-  } catch {}
+  } catch {
+    // ignore
+  }
 
   fastify.close();
 
