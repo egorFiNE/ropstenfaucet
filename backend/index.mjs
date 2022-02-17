@@ -152,6 +152,7 @@ async function getBlockNumber() {
 
 async function executeTransaction({ address, ip }) {
   nonce++;
+  storeNonce();
 
   console.log("[%s] %s to %s: executing", (new Date()).toISOString(), nonce, address);
 
@@ -175,7 +176,7 @@ async function executeTransaction({ address, ip }) {
 
     await promiEvent;
 
-    promiEvent.once('transactionHash', hash => console.log("[%s] %s to %s: %s mined", (new Date()).toISOString(), nonce, address, hash));
+    console.log("[%s] %s to %s: %s mined", (new Date()).toISOString(), nonce, address, hash);
 
     limits[addressLC] = unixtime(); // eslint-disable-line require-atomic-updates
     ips[ip] = unixtime(); // eslint-disable-line require-atomic-updates
