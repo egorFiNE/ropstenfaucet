@@ -301,7 +301,7 @@ setInterval(expireLimits, ms('120s'));
 setInterval(expireIps, ms('120s'));
 
 updateFaucetBalance();
-setInterval(updateFaucetBalance, ms('60s'));
+setInterval(updateFaucetBalance, ms('2m'));
 
 nonce = parseInt(fs.readFileSync(NONCE_FILENAME).toString());
 console.log("Starting with nonce %d", nonce);
