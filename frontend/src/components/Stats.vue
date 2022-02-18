@@ -1,22 +1,27 @@
 <template>
-  <div v-if="$root.isStatsLoading">
+  <template v-if="$root.isStatsLoading">
     Loading stats...
-  </div>
+  </template>
 
-  <div v-else>
-    <b>{{ $format18($root.balance) }}&nbsp;rETH</b> available now at faucet<br/>
-    <a class="small" :href="'https://ropsten.etherscan.io/address/' + $root.address">{{ addressHr }}</a><br/>
-    <br/>
+  <template v-else>
+    <div class="mb-2">
+      <b>{{ $format18($root.balance) }}&nbsp;rETH</b> available
+    </div>
 
-    <b>{{ $format18($root.weiPerAddress) }}&nbsp;rETH</b> daily limit per address.
-    <br/>
-    <br/>
+    <!-- <a :href="'https://ropsten.etherscan.io/address/' + $root.address">{{ addressHr }}</a><br/> -->
 
-    <span class="blockNumber small danger" v-if="!$root.blockTimestamp">No last block information (stalled?)</span>
-    <span class="blockNumber small danger" v-else-if="isBlockTooOld">Stalled at block {{ $root.blockNumber }} ({{ blockTimestampHr }})</span>
-    <span class="blockNumber small" v-else>Currently at block {{ $root.blockNumber }}</span>
-    <br/>
-  </div>
+    <div class="mb-2">
+      <b>{{ $format18($root.weiPerAddress) }}&nbsp;rETH</b> daily limit per address
+    </div>
+
+    <div class="mb-4">
+      Faucet <a :href="'https://ropsten.etherscan.io/address/' + $root.address">{{ addressHr }}</a>
+    </div>
+
+    <div class="blockNumber small danger" v-if="!$root.blockTimestamp">No last block information (stalled?)</div>
+    <div class="blockNumber small danger" v-else-if="isBlockTooOld">Stalled at block {{ $root.blockNumber }} ({{ blockTimestampHr }})</div>
+    <div class="blockNumber small" v-else>Currently at block {{ $root.blockNumber }}</div>
+  </template>
 </template>
 
 <style scoped>
