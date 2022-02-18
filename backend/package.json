@@ -9,8 +9,8 @@
   },
   "dependencies": {
     "async": "^3.2.3",
-    "axios": "^0.24.0",
-    "dotenv": "^10.0.0",
+    "axios": "^0.26.0",
+    "dotenv": "^16.0.0",
     "fastify": "^3.20.2",
     "fastify-cors": "^6.0.2",
     "ms": "^2.1.3",
