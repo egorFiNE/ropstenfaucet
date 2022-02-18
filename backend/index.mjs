@@ -286,8 +286,6 @@ fastify.post('/api/gimme/',
       }
     }
 
-    const faucetBalance = BigInt(await web3.eth.getBalance(sponsor.address));
-
     if (faucetBalance < weiPerAddress) {
       return {
         success: false,
