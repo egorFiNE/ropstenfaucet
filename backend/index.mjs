@@ -150,6 +150,39 @@ async function getBlockNumber() {
   }
 }
 
+function sendTransaction(address, ip) {
+  return new Promise(resolve => {
+    sponsor.signTransaction({
+      from: sponsor.address,
+      to: address,
+      value: weiPerAddress.toString(),
+      gas: web3.utils.toHex(70000),
+      maxFeePerGas: web3.utils.toHex(web3.utils.toWei('100', 'gwei')),
+      maxPriorityFeePerGas: web3.utils.toHex(web3.utils.toWei('5', 'gwei'))
+
+    }).then(tx => {
+      const addressLC = address.toLowerCase();
+
+      try {
+        const promiEvent = web3.eth.sendSignedTransaction(tx.rawTransaction);
+        promiEvent.once('transactionHash', hash => {
+          console.log("[%s] %s: %s", (new Date()).toISOString(), address, hash);
+          resolve();
+        });
+
+      } catch (e) {
+        console.error("SEND TRANSACTION FAILED");
+        console.error(e);
+
+        delete limits[addressLC];
+        delete ips[ip];
+        storeLimits();
+        storeIps();
+      }
+    });
+  });
+}
+
 async function runQueue() {
   if (queue.length == 0) {
     if (isExitRequested) {
@@ -166,39 +199,12 @@ async function runQueue() {
 
   console.log("Running queue of %d addresses", workingQueue.length);
 
-  const promises1 = workingQueue.map(async ({ address, ip }) => {
-    const tx = await sponsor.signTransaction({
-      from: sponsor.address,
-      to: address,
-      value: weiPerAddress.toString(),
-      gas: web3.utils.toHex(70000),
-      maxFeePerGas: web3.utils.toHex(web3.utils.toWei('100', 'gwei')),
-      maxPriorityFeePerGas: web3.utils.toHex(web3.utils.toWei('5', 'gwei'))
-    });
+  const promises1 = [];
 
-    const addressLC = address.toLowerCase();
-
-    let promiEvent = null;
-    try {
-      promiEvent = web3.eth.sendSignedTransaction(tx.rawTransaction);
-      promiEvent.once('transactionHash', hash => console.log("[%s] %s: %s", (new Date()).toISOString(), address, hash));
-
-      return promiEvent;
-
-    } catch (e) {
-      console.error("SEND TRANSACTION FAILED");
-      console.error(e);
-
-      promiEvent = null;
-
-      delete limits[addressLC];
-      delete ips[ip];
-      storeLimits();
-      storeIps();
-    }
-
-    return null;
-  });
+  for (const { address, ip } of workingQueue) {
+    const transaction = await sendTransaction(address, ip);
+    promises1.push(transaction);
+  }
 
   console.log("Sent, mining...");
 
