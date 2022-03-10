@@ -25,7 +25,7 @@ let queue = null;
 // let nonce = null;
 let isExitRequested = false;
 
-const RUN_QUEUE_INTERVAL_MS = ms('30s');
+const RUN_QUEUE_INTERVAL_MS = ms('15s');
 const BLOCK_EXPIRATION_MS = ms('15s');
 const EXPIRATION_SECONDS = 86400;
 const limitsFilename = path.join(__dirname, 'limits.json');
@@ -150,7 +150,7 @@ async function getBlockNumber() {
   }
 }
 
-function sendTransaction(address, ip) {
+function sendTransaction(address, ip, nonce) {
   return new Promise(resolve => {
     sponsor.signTransaction({
       from: sponsor.address,
@@ -158,14 +158,15 @@ function sendTransaction(address, ip) {
       value: weiPerAddress.toString(),
       gas: web3.utils.toHex(70000),
       maxFeePerGas: web3.utils.toHex(web3.utils.toWei('100', 'gwei')),
-      maxPriorityFeePerGas: web3.utils.toHex(web3.utils.toWei('5', 'gwei'))
+      maxPriorityFeePerGas: web3.utils.toHex(web3.utils.toWei('5', 'gwei')),
+      nonce
 
     }).then(tx => {
       const addressLC = address.toLowerCase();
 
       try {
         const promiEvent = web3.eth.sendSignedTransaction(tx.rawTransaction);
-        promiEvent.once('transactionHash', hash => {
+        promiEvent.once('sent', hash => {
           console.log("[%s] %s: %s", (new Date()).toISOString(), address, hash);
           resolve();
         });
@@ -178,6 +179,8 @@ function sendTransaction(address, ip) {
         delete ips[ip];
         storeLimits();
         storeIps();
+
+        resolve();
       }
     });
   });
@@ -197,13 +200,16 @@ async function runQueue() {
   const workingQueue = queue;
   queue = [];
 
-  console.log("Running queue of %d addresses", workingQueue.length);
+  let nonce = await web3.eth.getTransactionCount(sponsor.address);
+
+  console.log("Running queue of %d addresses with nonce %d", workingQueue.length, nonce);
 
   const promises1 = [];
 
   for (const { address, ip } of workingQueue) {
-    const transaction = await sendTransaction(address, ip);
+    const transaction = await sendTransaction(address, ip, nonce);
     promises1.push(transaction);
+    nonce++;
   }
 
   console.log("Sent, mining...");
