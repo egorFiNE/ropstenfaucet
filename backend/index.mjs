@@ -25,6 +25,7 @@ let queue = null;
 // let nonce = null;
 let isExitRequested = false;
 
+const RUN_QUEUE_INTERVAL_MS = ms('30s');
 const BLOCK_EXPIRATION_MS = ms('15s');
 const EXPIRATION_SECONDS = 86400;
 const limitsFilename = path.join(__dirname, 'limits.json');
@@ -147,6 +148,70 @@ async function getBlockNumber() {
     blockTimestampCache = block.timestamp;
     blockNumberCacheUpdatedAtMs = Date.now();
   }
+}
+
+async function runQueue() {
+  if (queue.length == 0) {
+    if (isExitRequested) {
+      console.log("Exiting before queue execution");
+      process.exit(0);
+    }
+
+    setTimeout(runQueue, RUN_QUEUE_INTERVAL_MS);
+    return;
+  }
+
+  const workingQueue = queue;
+  queue = [];
+
+  console.log("Running queue of %d addresses", workingQueue.length);
+
+  const promises1 = workingQueue.map(async ({ address, ip }) => {
+    const tx = await sponsor.signTransaction({
+      from: sponsor.address,
+      to: address,
+      value: weiPerAddress.toString(),
+      gas: web3.utils.toHex(70000),
+      maxFeePerGas: web3.utils.toHex(web3.utils.toWei('100', 'gwei')),
+      maxPriorityFeePerGas: web3.utils.toHex(web3.utils.toWei('5', 'gwei'))
+    });
+
+    const addressLC = address.toLowerCase();
+
+    let promiEvent = null;
+    try {
+      promiEvent = web3.eth.sendSignedTransaction(tx.rawTransaction);
+      promiEvent.once('transactionHash', hash => console.log("[%s] %s: %s", (new Date()).toISOString(), address, hash));
+
+      return promiEvent;
+
+    } catch (e) {
+      console.error("SEND TRANSACTION FAILED");
+      console.error(e);
+
+      promiEvent = null;
+
+      delete limits[addressLC];
+      delete ips[ip];
+      storeLimits();
+      storeIps();
+    }
+
+    return null;
+  });
+
+  console.log("Sent, mining...");
+
+  await Promise.all(promises1);
+
+  console.log("All mined");
+
+  if (isExitRequested) {
+    console.log("Exiting after queue execution");
+    process.exit(0);
+  }
+
+  setTimeout(runQueue, RUN_QUEUE_INTERVAL_MS);
 }
 
 async function executeTransaction({ address, ip }) {
@@ -322,25 +387,33 @@ setInterval(expireIps, ms('120s'));
 updateFaucetBalance();
 setInterval(updateFaucetBalance, ms('2m'));
 
+queue = [];
+runQueue();
+
 // loadNonce();
 // console.log("Starting with nonce %d", nonce);
 
-queue = async.queue(executeTransaction, 1);
+// queue = async.queue(executeTransaction, 1);
 
 process.on('SIGINT', async () => {
-  console.log("Got SIGINT");
+  console.log("Got SIGINT, draining");
+  if (isExitRequested) {
+    console.log("Force exit");
+    process.exit(0);
+  }
+
   isExitRequested = true;
 
-  try {
-    await queue.drain(() => console.log("Drained callback"));
-  } catch {
-    // ignore
-  }
+  // try {
+  //   await queue.drain(() => console.log("Drained callback"));
+  // } catch {
+  //   // ignore
+  // }
 
   fastify.close();
 
-  console.log("Queue drained, exit");
-  process.exit(0);
+  // console.log("Queue drained, exit");
+  // process.exit(0);
 });
 
 fastify.listen(process.env.LISTEN_PORT, process.env.LISTEN_HOST, (err, address) => {
