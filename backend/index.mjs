@@ -291,6 +291,10 @@ fastify.post('/api/gimme/',
       };
     }
 
+    limits[addressLC] = unixtime(); // eslint-disable-line require-atomic-updates
+    ips[ip] = unixtime(); // eslint-disable-line require-atomic-updates
+    storeLimits();
+
     queue.push({ address, ip });
 
     return {
