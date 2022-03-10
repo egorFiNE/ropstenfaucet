@@ -12,7 +12,7 @@ import Web3 from 'web3';
 const isProduction = process.env.NODE_ENV === 'production';
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
 
-const NONCE_FILENAME = path.join(__dirname, 'nonce.txt');
+// const NONCE_FILENAME = path.join(__dirname, 'nonce.txt');
 const weiPerAddressFilename = path.join(__dirname, 'wei-per-address.txt');
 let weiPerAddress = null;
 let faucetBalance = null;
@@ -22,7 +22,7 @@ let blockTimestampCache = null;
 let blockNumberCacheUpdatedAtMs = 0;
 
 let queue = null;
-let nonce = null;
+// let nonce = null;
 let isExitRequested = false;
 
 const BLOCK_EXPIRATION_MS = ms('15s');
@@ -85,14 +85,13 @@ function storeIps() {
   fs.writeFileSync(ipsFilename, JSON.stringify(ips, null, "\t"));
 }
 
-function storeNonce() {
-  fs.writeFileSync(NONCE_FILENAME, nonce.toString() + "\n");
-}
+// function storeNonce() {
+//   fs.writeFileSync(NONCE_FILENAME, nonce.toString() + "\n");
+// }
 
-function loadNonce() {
-  nonce = parseInt(fs.readFileSync(NONCE_FILENAME).toString());
-}
-
+// function loadNonce() {
+//   nonce = parseInt(fs.readFileSync(NONCE_FILENAME).toString());
+// }
 
 function unixtime() {
   return Math.floor(Date.now() / 1000);
@@ -151,10 +150,10 @@ async function getBlockNumber() {
 }
 
 async function executeTransaction({ address, ip }) {
-  nonce++;
-  storeNonce();
+  // nonce++;
+  // storeNonce();
 
-  console.log("[%s] %s to %s: executing", (new Date()).toISOString(), nonce, address);
+  console.log("[%s] %s: executing", (new Date()).toISOString(), address);
 
   const addressLC = address.toLowerCase();
 
@@ -164,19 +163,18 @@ async function executeTransaction({ address, ip }) {
     value: weiPerAddress.toString(),
     gas: web3.utils.toHex(70000),
     maxFeePerGas: web3.utils.toHex(web3.utils.toWei('100', 'gwei')),
-    maxPriorityFeePerGas: web3.utils.toHex(web3.utils.toWei('5', 'gwei')),
-    nonce
+    maxPriorityFeePerGas: web3.utils.toHex(web3.utils.toWei('5', 'gwei'))
   };
 
   const signed = await sponsor.signTransaction(tx);
 
   try {
     const promiEvent = web3.eth.sendSignedTransaction(signed.rawTransaction);
-    promiEvent.once('transactionHash', hash => console.log("[%s] %s to %s: %s", (new Date()).toISOString(), nonce, address, hash));
+    promiEvent.once('transactionHash', hash => console.log("[%s] %s: %s", (new Date()).toISOString(), address, hash));
 
     await promiEvent;
 
-    console.log("[%s] %s to %s: mined", (new Date()).toISOString(), nonce, address);
+    console.log("[%s] %s: mined", (new Date()).toISOString(), address);
 
     limits[addressLC] = unixtime(); // eslint-disable-line require-atomic-updates
     ips[ip] = unixtime(); // eslint-disable-line require-atomic-updates
@@ -185,13 +183,13 @@ async function executeTransaction({ address, ip }) {
     console.error("SEND TRANSACTION FAILED");
     console.error(e);
 
-    nonce--;
+    // nonce--;
 
     delete limits[addressLC];
     delete ips[ip];
 
   } finally {
-    storeNonce();
+    // storeNonce();
     storeLimits();
     storeIps();
   }
@@ -320,8 +318,8 @@ setInterval(expireIps, ms('120s'));
 updateFaucetBalance();
 setInterval(updateFaucetBalance, ms('2m'));
 
-loadNonce();
-console.log("Starting with nonce %d", nonce);
+// loadNonce();
+// console.log("Starting with nonce %d", nonce);
 
 queue = async.queue(executeTransaction, 1);
 
