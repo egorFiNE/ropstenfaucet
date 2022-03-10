@@ -162,12 +162,22 @@ function sendTransaction(address, ip, nonce) {
       nonce
 
     }).then(tx => {
+      console.log("Signed");
       const addressLC = address.toLowerCase();
 
       try {
         const promiEvent = web3.eth.sendSignedTransaction(tx.rawTransaction);
-        promiEvent.once('sent', () => resolve(promiEvent));
-        promiEvent.once('error', e => {
+        console.log("sendSigned");
+
+        promiEvent.once('transactionHash', hash => console.log(hash));
+        promiEvent.once('sent', () => {
+          console.log('sent');
+          resolve(promiEvent);
+        });
+
+        promiEvent.once('sending', () => console.log("SENDING"));
+
+        promiEvent.on('error', e => {
           console.error("SEND TRANSACTION FAILED (1)");
           console.error(e);
 
