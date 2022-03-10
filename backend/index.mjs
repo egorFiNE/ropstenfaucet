@@ -166,10 +166,7 @@ function sendTransaction(address, ip, nonce) {
 
       try {
         const promiEvent = web3.eth.sendSignedTransaction(tx.rawTransaction);
-        promiEvent.once('sent', hash => {
-          console.log("[%s] %s: %s", (new Date()).toISOString(), address, hash);
-          resolve();
-        });
+        promiEvent.once('sent', () => resolve(promiEvent));
 
       } catch (e) {
         console.error("SEND TRANSACTION FAILED");
@@ -208,8 +205,10 @@ async function runQueue() {
 
   for (const { address, ip } of workingQueue) {
     const transaction = await sendTransaction(address, ip, nonce);
-    promises1.push(transaction);
-    nonce++;
+    if (transaction) {
+      promises1.push(transaction);
+      nonce++;
+    }
   }
 
   console.log("Sent, mining...");
