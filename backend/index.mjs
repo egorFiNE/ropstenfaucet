@@ -167,6 +167,17 @@ function sendTransaction(address, ip, nonce) {
       try {
         const promiEvent = web3.eth.sendSignedTransaction(tx.rawTransaction);
         promiEvent.once('sent', () => resolve(promiEvent));
+        promiEvent.once('error', e => {
+          console.error("SEND TRANSACTION FAILED (1)");
+          console.error(e);
+
+          delete limits[addressLC];
+          delete ips[ip];
+          storeLimits();
+          storeIps();
+
+          resolve();
+        });
 
       } catch (e) {
         console.error("SEND TRANSACTION FAILED");
@@ -204,10 +215,14 @@ async function runQueue() {
   const promises1 = [];
 
   for (const { address, ip } of workingQueue) {
+    console.log("Sending %s nonce %d", address, nonce);
     const transaction = await sendTransaction(address, ip, nonce);
     if (transaction) {
+      console.log("Sent %s nonce %d", address, nonce);
       promises1.push(transaction);
       nonce++;
+    } else {
+      console.log("NOT %s", address);
     }
   }
 
