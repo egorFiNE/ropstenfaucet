@@ -192,8 +192,7 @@ async function possiblyRunQueue() {
     return;
   }
 
-  const workingQueue = queue;
-  queue = [];
+  const workingQueue = queue.splice(0, MAX_QUEUE_LENGTH);
 
   const nonce = await sponsor.getTransactionCount();
 
@@ -207,9 +206,10 @@ async function possiblyRunQueue() {
 
   const addressList = workingQueue.map(entry => entry.address);
   const transactionRequest = await contract.spread(weiPerAddress, addressList, overrides);
-  await waitTransaction(transactionRequest);
 
   lastQueueExecutedAtUnixtime = unixtime();
+
+  await waitTransaction(transactionRequest);
 
   setTimeout(possiblyRunQueue, RUN_QUEUE_INTERVAL_MS);
 }
