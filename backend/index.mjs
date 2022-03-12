@@ -5,29 +5,28 @@ import fs from 'fs';
 import ms from 'ms';
 import axios from 'axios';
 import Fastify from 'fastify';
-import async from 'async';
 import FastifyCors from 'fastify-cors';
-import Web3 from 'web3';
+import { ethers } from 'ethers';
 
 const isProduction = process.env.NODE_ENV === 'production';
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
 
-// const NONCE_FILENAME = path.join(__dirname, 'nonce.txt');
 const weiPerAddressFilename = path.join(__dirname, 'wei-per-address.txt');
 let weiPerAddress = null;
 let faucetBalance = null;
 
-let blockNumberCache = null;
-let blockTimestampCache = null;
-let blockNumberCacheUpdatedAtMs = 0;
+let blockNumber = null;
+let blockTimestamp = null;
 
 let queue = null;
-// let nonce = null;
+let lastQueueExecutedAtUnixtime = 0;
 let isExitRequested = false;
 
-const RUN_QUEUE_INTERVAL_MS = ms('15s');
-const BLOCK_EXPIRATION_MS = ms('15s');
+const MAX_QUEUE_LENGTH = 10;
+const MAX_QUEUE_SECONDS = 60;
+const RUN_QUEUE_INTERVAL_MS = ms('5s');
 const EXPIRATION_SECONDS = 86400;
+const PING_EVERY = '45s';
 const limitsFilename = path.join(__dirname, 'limits.json');
 const ipsFilename = path.join(__dirname, 'ips.json');
 let limits = {};
@@ -35,8 +34,43 @@ let ips = {};
 
 const WHITE_LIST = (process.env.WHITE_LIST || '').trim().toLowerCase().replace(/\s+/g, ' ').split(' ');
 
-const web3 = new Web3(process.env.ETHEREUM_RPC);
-const sponsor = web3.eth.accounts.privateKeyToAccount(process.env.PRIVATE_KEY);
+const provider = new ethers.providers.InfuraWebSocketProvider(process.env.INFURA_NETWORK, {
+  projectId: process.env.INFURA_PROJECT_ID
+});
+
+provider._websocket.on('open', () => {
+  console.log("Provider open");
+  provider._websocket.ping();
+});
+
+provider._websocket.on('pong', () => setTimeout(() => provider._websocket.ping(), ms(PING_EVERY)));
+
+provider._websocket.on('close', () => {
+  console.log("Connection died. exit");
+  process.exit(0);
+});
+
+const sponsor = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+
+const SprayABI = [
+  'function spread(uint256 amount, address[] memory accounts)'
+];
+
+const contract = new ethers.Contract(process.env.CONTRACT, SprayABI, sponsor);
+
+provider.on('block', _blockNumber => {
+  blockNumber = _blockNumber;
+  blockTimestamp = unixtime();
+});
+
+const _blockNumber = await provider.getBlockNumber();
+if (
+  (blockNumber !== null && _blockNumber > blockNumber) ||
+  !blockNumber
+) {
+  blockNumber = _blockNumber;
+  blockTimestamp = unixtime();
+}
 
 async function verifyRecaptcha(token, ip = null) {
   const data = {
@@ -125,175 +159,59 @@ function readWeiPerAddress() {
 }
 
 async function updateFaucetBalance() {
-  faucetBalance = await web3.eth.getBalance(sponsor.address);
+  faucetBalance = (await provider.getBalance(contract.address)).toBigInt();
 }
 
-async function getBlockNumber() {
-  if (Date.now() - blockNumberCacheUpdatedAtMs >= BLOCK_EXPIRATION_MS) {
-    let block = null;
-    try {
-      block = await web3.eth.getBlock('latest');
-    } catch (e) {
-      console.error("Cannot load block");
-      console.error(e);
+export async function waitTransaction(transactionRequest) {
+  console.log("\t↳ Waiting for transaction %s to mine", transactionRequest.hash);
 
-      blockNumberCache = null;
-      blockTimestampCache = null;
-      blockNumberCacheUpdatedAtMs = 0;
-
-      return;
-    }
-
-    blockNumberCache = block.number;
-    blockTimestampCache = block.timestamp;
-    blockNumberCacheUpdatedAtMs = Date.now();
+  try {
+    const transactionReceipt = await transactionRequest.wait();
+    console.log("\t\t↳ Mined in block %s", transactionReceipt.blockNumber);
+  } catch (e) {
+    console.error("\t\t↳ Transaction failed:");
+    console.error(e);
   }
 }
 
-function sendTransaction(address, ip, nonce) {
-  return new Promise(resolve => {
-    sponsor.signTransaction({
-      from: sponsor.address,
-      to: address,
-      value: weiPerAddress.toString(),
-      gas: web3.utils.toHex(70000),
-      maxFeePerGas: web3.utils.toHex(web3.utils.toWei('100', 'gwei')),
-      maxPriorityFeePerGas: web3.utils.toHex(web3.utils.toWei('5', 'gwei')),
-      nonce
-
-    }).then(tx => {
-      console.log("Signed");
-      const addressLC = address.toLowerCase();
-
-      try {
-        const promiEvent = web3.eth.sendSignedTransaction(tx.rawTransaction);
-        console.log("sendSigned");
-
-        promiEvent.once('transactionHash', hash => console.log(hash));
-        promiEvent.once('sent', () => {
-          console.log('sent');
-          resolve(promiEvent);
-        });
-
-        promiEvent.once('sending', () => console.log("SENDING"));
-
-        promiEvent.on('error', e => {
-          console.error("SEND TRANSACTION FAILED (1)");
-          console.error(e);
-
-          delete limits[addressLC];
-          delete ips[ip];
-          storeLimits();
-          storeIps();
-
-          resolve();
-        });
-
-      } catch (e) {
-        console.error("SEND TRANSACTION FAILED");
-        console.error(e);
-
-        delete limits[addressLC];
-        delete ips[ip];
-        storeLimits();
-        storeIps();
-
-        resolve();
-      }
-    });
-  });
-}
-
-async function runQueue() {
+async function possiblyRunQueue() {
   if (queue.length == 0) {
     if (isExitRequested) {
       console.log("Exiting before queue execution");
       process.exit(0);
     }
 
-    setTimeout(runQueue, RUN_QUEUE_INTERVAL_MS);
+    lastQueueExecutedAtUnixtime = unixtime();
+    setTimeout(possiblyRunQueue, RUN_QUEUE_INTERVAL_MS);
+    return;
+  }
+
+  if (queue.length < MAX_QUEUE_LENGTH && (unixtime() - lastQueueExecutedAtUnixtime) < MAX_QUEUE_SECONDS) {
+    console.log("Skip queue execution, length=%d, seconds=%d", queue.length, unixtime() - lastQueueExecutedAtUnixtime);
+    setTimeout(possiblyRunQueue, RUN_QUEUE_INTERVAL_MS);
     return;
   }
 
   const workingQueue = queue;
   queue = [];
 
-  let nonce = await web3.eth.getTransactionCount(sponsor.address);
+  const nonce = await sponsor.getTransactionCount();
 
-  console.log("Running queue of %d addresses with nonce %d", workingQueue.length, nonce);
-
-  const promises1 = [];
-
-  for (const { address, ip } of workingQueue) {
-    console.log("Sending %s nonce %d", address, nonce);
-    const transaction = await sendTransaction(address, ip, nonce);
-    if (transaction) {
-      console.log("Sent %s nonce %d", address, nonce);
-      promises1.push(transaction);
-      nonce++;
-    } else {
-      console.log("NOT %s", address);
-    }
-  }
-
-  console.log("Sent, mining...");
-
-  await Promise.all(promises1);
-
-  console.log("All mined");
-
-  if (isExitRequested) {
-    console.log("Exiting after queue execution");
-    process.exit(0);
-  }
-
-  setTimeout(runQueue, RUN_QUEUE_INTERVAL_MS);
-}
-
-async function executeTransaction({ address, ip }) {
-  // nonce++;
-  // storeNonce();
-
-  console.log("[%s] %s: executing", (new Date()).toISOString(), address);
-
-  const addressLC = address.toLowerCase();
-
-  const tx = {
-    from: sponsor.address,
-    to: address,
-    value: weiPerAddress.toString(),
-    gas: web3.utils.toHex(70000),
-    maxFeePerGas: web3.utils.toHex(web3.utils.toWei('100', 'gwei')),
-    maxPriorityFeePerGas: web3.utils.toHex(web3.utils.toWei('5', 'gwei'))
+  const overrides = {
+    maxFeePerGas: ethers.utils.parseUnits('700', 'gwei'),
+    maxPriorityFeePerGas: ethers.utils.parseUnits('700', 'gwei'),
+    nonce
   };
 
-  const signed = await sponsor.signTransaction(tx);
+  console.log(`queue length ${workingQueue.length} nonce ${overrides.nonce} maxFeePerGas ${ethers.utils.formatUnits(overrides.maxFeePerGas, 'gwei')} maxPriorityFeePerGas ${ethers.utils.formatUnits(overrides.maxPriorityFeePerGas, 'gwei')}`);
 
-  try {
-    const promiEvent = web3.eth.sendSignedTransaction(signed.rawTransaction);
-    promiEvent.once('transactionHash', hash => console.log("[%s] %s: %s", (new Date()).toISOString(), address, hash));
+  const addressList = workingQueue.map(entry => entry.address);
+  const transactionRequest = await contract.spread(weiPerAddress, addressList, overrides);
+  await waitTransaction(transactionRequest);
 
-    await promiEvent;
+  lastQueueExecutedAtUnixtime = unixtime();
 
-    console.log("[%s] %s: mined", (new Date()).toISOString(), address);
-
-    limits[addressLC] = unixtime(); // eslint-disable-line require-atomic-updates
-    ips[ip] = unixtime(); // eslint-disable-line require-atomic-updates
-
-  } catch (e) {
-    console.error("SEND TRANSACTION FAILED");
-    console.error(e);
-
-    // nonce--;
-
-    delete limits[addressLC];
-    delete ips[ip];
-
-  } finally {
-    // storeNonce();
-    storeLimits();
-    storeIps();
-  }
+  setTimeout(possiblyRunQueue, RUN_QUEUE_INTERVAL_MS);
 }
 
 const fastify = Fastify({
@@ -305,14 +223,15 @@ fastify.register(FastifyCors, {
 
 fastify.get('/api/stats/',
   async () => {
-    await getBlockNumber();
-
     return {
       success: true,
-      address: sponsor.address,
-      balance: faucetBalance,
-      blockNumber: blockNumberCache,
-      blockTimestamp: blockTimestampCache,
+      address: contract.address,
+      donationsToAddress: sponsor.address,
+      balance: faucetBalance.toString(),
+
+      blockNumber,
+      blockTimestamp,
+
       weiPerAddress: weiPerAddress.toString()
     };
   }
@@ -357,7 +276,7 @@ fastify.post('/api/gimme/',
 
     const address = (request.body.address || '').trim();
 
-    const isAddress = web3.utils.isAddress(address);
+    const isAddress = ethers.utils.isAddress(address);
     if (!isAddress) {
       return {
         success: false,
@@ -421,15 +340,10 @@ setInterval(expireLimits, ms('120s'));
 setInterval(expireIps, ms('120s'));
 
 updateFaucetBalance();
-setInterval(updateFaucetBalance, ms('2m'));
+setInterval(updateFaucetBalance, ms('5m'));
 
 queue = [];
-runQueue();
-
-// loadNonce();
-// console.log("Starting with nonce %d", nonce);
-
-// queue = async.queue(executeTransaction, 1);
+possiblyRunQueue();
 
 process.on('SIGINT', async () => {
   console.log("Got SIGINT, draining");
@@ -440,16 +354,7 @@ process.on('SIGINT', async () => {
 
   isExitRequested = true;
 
-  // try {
-  //   await queue.drain(() => console.log("Drained callback"));
-  // } catch {
-  //   // ignore
-  // }
-
   fastify.close();
-
-  // console.log("Queue drained, exit");
-  // process.exit(0);
 });
 
 fastify.listen(process.env.LISTEN_PORT, process.env.LISTEN_HOST, (err, address) => {
