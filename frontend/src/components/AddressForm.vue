@@ -11,7 +11,7 @@
 
     <alert v-if="state == 'success'" kind="success">
       <small>
-        Sucessfully queued <b>{{ $format18(amountSent) }}</b> to {{ addressSent }}. Please expect rETH to your address within next few minutes.
+        Sucessfully queued <b>{{ $format18(amountSent) }}</b> to {{ addressSent }}. <br/><br/>Please expect rETH to your address within <b>next few minutes.</b>
       </small>
     </alert>
 
