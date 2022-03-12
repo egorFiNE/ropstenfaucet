@@ -228,6 +228,7 @@ fastify.get('/api/stats/',
       address: contract.address,
       donationsToAddress: sponsor.address,
       balance: faucetBalance.toString(),
+      queueSize: queue.length,
 
       blockNumber,
       blockTimestamp,

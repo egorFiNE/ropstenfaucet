@@ -14,6 +14,10 @@
       <b>{{ $format18($root.weiPerAddress) }}&nbsp;rETH</b> daily limit per address
     </div>
 
+    <div class="mb-2">
+      <b>{{ $root.queueSize }}</b> recipients queued
+    </div>
+
     <div class="mb-4">
       Faucet <a :href="'https://ropsten.etherscan.io/address/' + $root.address">{{ addressHr }}</a>
     </div>

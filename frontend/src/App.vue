@@ -106,6 +106,7 @@ export default {
       donationsToAddress: '',
       blockNumber: null,
       blockTimestamp: null,
+      queueSize: null,
       isCopied: false
     };
   },
@@ -144,6 +145,7 @@ export default {
       this.donationsToAddress = json.donationsToAddress;
       this.blockNumber = json.blockNumber;
       this.blockTimestamp = json.blockTimestamp;
+      this.queueSize = json.queueSize;
 
       this.isStatsLoading = false;
     },
