@@ -206,7 +206,16 @@ async function possiblyRunQueue() {
   console.log(`queue length ${workingQueue.length} nonce ${overrides.nonce} maxFeePerGas ${ethers.utils.formatUnits(overrides.maxFeePerGas, 'gwei')} maxPriorityFeePerGas ${ethers.utils.formatUnits(overrides.maxPriorityFeePerGas, 'gwei')}`);
 
   const addressList = workingQueue.map(entry => entry.address);
-  const transactionRequest = await contract.spread(weiPerAddress, addressList, overrides);
+
+  let transactionRequest;
+  try {
+    transactionRequest = await contract.spread(weiPerAddress, addressList, overrides);
+  } catch (e) {
+    console.error("Transaction request failed");
+    console.error(e);
+    setTimeout(possiblyRunQueue, RUN_QUEUE_INTERVAL_MS);
+    return;
+  }
 
   lastQueueExecutedAtUnixtime = unixtime();
 
