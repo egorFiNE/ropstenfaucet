@@ -199,7 +199,8 @@ async function possiblyRunQueue() {
   const overrides = {
     maxFeePerGas: ethers.utils.parseUnits('700', 'gwei'),
     maxPriorityFeePerGas: ethers.utils.parseUnits('700', 'gwei'),
-    nonce
+    nonce,
+    gasLimit: 22000 * workingQueue.length + 100000
   };
 
   console.log(`queue length ${workingQueue.length} nonce ${overrides.nonce} maxFeePerGas ${ethers.utils.formatUnits(overrides.maxFeePerGas, 'gwei')} maxPriorityFeePerGas ${ethers.utils.formatUnits(overrides.maxPriorityFeePerGas, 'gwei')}`);
