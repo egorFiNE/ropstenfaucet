@@ -39,6 +39,27 @@
     </div>
 
     <div class="col-md-6 my-4 col-sm-12">
+      <h1 class="h3 mb-4 fw-normal">Did not receive your rETH?</h1>
+
+      <div>
+        <p>
+          EVM blockchains in general and Ropsten network in particular are incredibly fragile, unreliable and hostile environments. Transactions do get lost,
+          sometimes fail to mine, gas limits are estimated incorrectly, network explorer loses records, etc. Infura sometimes misreport
+          nonces, and Alchemy sometimes report non-existing transactions.
+        </p>
+
+        <p>
+          Rants off. If you are willing to help: please see <code>possiblyRunQueue()</code> in <a href="https://github.com/egorFiNE/ropstenfaucet/blob/master/backend/index.mjs"><code>index.mjs</code></a>
+          and send me a pull request. I'd greatly appreciate that.
+        </p>
+
+        <p>
+          Note to Infura/Alchemy: get in touch with me by <a href="mailto:me@egorfine.com">email</a> and let's crush those bugs.
+        </p>
+      </div>
+    </div>
+
+    <div class="col-md-6 my-4 col-sm-12">
       <h1 class="h3 mb-4 fw-normal">Please donate</h1>
 
       <div>
