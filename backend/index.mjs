@@ -213,8 +213,8 @@ async function possiblyRunQueue() {
   const nonce = await sponsor.getTransactionCount();
 
   const overrides = {
-    maxFeePerGas: ethers.utils.parseUnits('700', 'gwei'),
-    maxPriorityFeePerGas: ethers.utils.parseUnits('700', 'gwei'),
+    maxFeePerGas: ethers.utils.parseUnits('300', 'gwei'),
+    maxPriorityFeePerGas: ethers.utils.parseUnits('300', 'gwei'),
     nonce,
     gasLimit
   };
