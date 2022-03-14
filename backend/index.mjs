@@ -23,7 +23,7 @@ let lastQueueExecutedAtUnixtime = 0;
 let isExitRequested = false;
 
 const MAX_QUEUE_LENGTH = 20;
-const MAX_QUEUE_SECONDS = 45;
+const MAX_QUEUE_SECONDS = 180;
 const RUN_QUEUE_INTERVAL_MS = ms('5s');
 const EXPIRATION_SECONDS = 86400;
 const PING_EVERY = '45s';
