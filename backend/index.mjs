@@ -194,18 +194,31 @@ async function possiblyRunQueue() {
 
   const workingQueue = queue.splice(0, MAX_QUEUE_LENGTH);
 
+  const addressList = workingQueue.map(entry => entry.address);
+
+  let estimatedGas;
+  try {
+    estimatedGas = await contract.estimateGas.spread(weiPerAddress, addressList);
+  } catch (e) {
+    console.error("Estimation failed");
+    console.error(e);
+    // FIXME return to queue?
+    setTimeout(possiblyRunQueue, RUN_QUEUE_INTERVAL_MS);
+    return;
+  }
+
+  const gasLimit = estimatedGas.mul(2);
+
   const nonce = await sponsor.getTransactionCount();
 
   const overrides = {
     maxFeePerGas: ethers.utils.parseUnits('700', 'gwei'),
     maxPriorityFeePerGas: ethers.utils.parseUnits('700', 'gwei'),
     nonce,
-    gasLimit: 22000 * workingQueue.length + 100000
+    gasLimit
   };
 
-  console.log(`queue length ${workingQueue.length} nonce ${overrides.nonce} maxFeePerGas ${ethers.utils.formatUnits(overrides.maxFeePerGas, 'gwei')} maxPriorityFeePerGas ${ethers.utils.formatUnits(overrides.maxPriorityFeePerGas, 'gwei')}`);
-
-  const addressList = workingQueue.map(entry => entry.address);
+  console.log(`queue length ${workingQueue.length} nonce ${overrides.nonce} maxFeePerGas ${ethers.utils.formatUnits(overrides.maxFeePerGas, 'gwei')} maxPriorityFeePerGas ${ethers.utils.formatUnits(overrides.maxPriorityFeePerGas, 'gwei')} gasLimit ${gasLimit}`);
 
   let transactionRequest;
   try {
