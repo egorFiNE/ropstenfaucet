@@ -175,12 +175,13 @@ export async function waitTransaction(transactionRequest) {
 }
 
 async function possiblyRunQueue() {
-  if (queue.length == 0) {
-    if (isExitRequested) {
-      console.log("Exiting before queue execution");
-      process.exit(0);
-    }
+  if (isExitRequested) {
+    console.log("Exiting before queue execution");
+    process.exit(0);
+  }
 
+  if (queue.length == 0) {
+    // FIXME exit here when the code is stable
     lastQueueExecutedAtUnixtime = unixtime();
     setTimeout(possiblyRunQueue, RUN_QUEUE_INTERVAL_MS);
     return;
