@@ -22,7 +22,10 @@ let queue = null;
 let lastQueueExecutedAtUnixtime = 0;
 let isExitRequested = false;
 
-const MAX_QUEUE_LENGTH = 30;
+const MAX_FEE_PER_GAS = 100;
+const MAX_PRIORITY_FEE_PER_GAS = 100;
+
+const MAX_QUEUE_LENGTH = 40;
 const MAX_QUEUE_SECONDS = 240;
 const RUN_QUEUE_INTERVAL_MS = ms('5s');
 const EXPIRATION_SECONDS = 86400;
@@ -213,8 +216,8 @@ async function possiblyRunQueue() {
   const nonce = await sponsor.getTransactionCount();
 
   const overrides = {
-    maxFeePerGas: ethers.utils.parseUnits('300', 'gwei'),
-    maxPriorityFeePerGas: ethers.utils.parseUnits('300', 'gwei'),
+    maxFeePerGas: ethers.utils.parseUnits(MAX_FEE_PER_GAS, 'gwei'),
+    maxPriorityFeePerGas: ethers.utils.parseUnits(MAX_PRIORITY_FEE_PER_GAS, 'gwei'),
     nonce,
     gasLimit
   };
