@@ -22,8 +22,8 @@ let queue = null;
 let lastQueueExecutedAtUnixtime = 0;
 let isExitRequested = false;
 
-const MAX_FEE_PER_GAS = 100;
-const MAX_PRIORITY_FEE_PER_GAS = 100;
+const MAX_FEE_PER_GAS = 60;
+const MAX_PRIORITY_FEE_PER_GAS = 60;
 
 const MAX_QUEUE_LENGTH = 40;
 const MAX_QUEUE_SECONDS = 240;
