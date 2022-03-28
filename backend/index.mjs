@@ -198,7 +198,9 @@ async function possiblyCollectMinedEth() {
 
   const transactionRequest = await sponsor.sendTransaction({
     to: contract.address,
-    value: collectWei
+    value: collectWei,
+    maxFeePerGas: ethers.utils.parseUnits(String(MAX_FEE_PER_GAS), 'gwei'),
+    maxPriorityFeePerGas: ethers.utils.parseUnits(String(MAX_PRIORITY_FEE_PER_GAS), 'gwei')
   });
 
   await waitTransaction(transactionRequest);
