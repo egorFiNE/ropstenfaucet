@@ -20,15 +20,17 @@ let blockTimestamp = null;
 
 let queue = null;
 let lastQueueExecutedAtUnixtime = 0;
+let lastCollectedMinedEthUnixtime = 0;
 let isExitRequested = false;
 
-const MAX_FEE_PER_GAS = 60;
-const MAX_PRIORITY_FEE_PER_GAS = 60;
+const MAX_FEE_PER_GAS = 40;
+const MAX_PRIORITY_FEE_PER_GAS = 40;
 
 const MAX_QUEUE_LENGTH = 40;
 const MAX_QUEUE_SECONDS = 240;
 const RUN_QUEUE_INTERVAL_MS = ms('5s');
 const EXPIRATION_SECONDS = 86400;
+const LEAVE_ETH_ON_ACCOUNT = 20;
 const PING_EVERY = '45s';
 const limitsFilename = path.join(__dirname, 'limits.json');
 const ipsFilename = path.join(__dirname, 'ips.json');
@@ -177,6 +179,31 @@ export async function waitTransaction(transactionRequest) {
   }
 }
 
+async function possiblyCollectMinedEth() {
+  if (Date.now() - lastCollectedMinedEthUnixtime < ms('6h')) {
+    return;
+  }
+
+  lastCollectedMinedEthUnixtime = Date.now();
+
+  const balance = (await sponsor.getBalance()).toBigInt();
+  const leaveOnAccount = ethers.utils.parseUnits(String(LEAVE_ETH_ON_ACCOUNT), 'ether');
+
+  const collectWei = balance - leaveOnAccount;
+  if (collectWei <= 0) {
+    return;
+  }
+
+  console.log(`Collecting ${ethers.utils.formatUnits(collectWei, 'ether')} ETH to contract`);
+
+  const transactionRequest = await sponsor.sendTransaction({
+    to: contract.address,
+    value: collectWei
+  });
+
+  await waitTransaction(transactionRequest);
+}
+
 async function possiblyRunQueue() {
   if (isExitRequested) {
     console.log("Exiting before queue execution");
@@ -224,6 +251,7 @@ async function possiblyRunQueue() {
 
   console.log(`queue length ${workingQueue.length} nonce ${overrides.nonce} maxFeePerGas ${ethers.utils.formatUnits(overrides.maxFeePerGas, 'gwei')} maxPriorityFeePerGas ${ethers.utils.formatUnits(overrides.maxPriorityFeePerGas, 'gwei')} gasLimit ${gasLimit}`);
 
+  const startedAt = Date.now();
   let transactionRequest;
   try {
     transactionRequest = await contract.spread(weiPerAddress, addressList, overrides);
@@ -237,6 +265,11 @@ async function possiblyRunQueue() {
   lastQueueExecutedAtUnixtime = unixtime();
 
   await waitTransaction(transactionRequest);
+
+  const diffS = Math.floor((Date.now() - startedAt) / 1000);
+  console.log("Mined in %ds", diffS);
+
+  await possiblyCollectMinedEth();
 
   setTimeout(possiblyRunQueue, RUN_QUEUE_INTERVAL_MS);
 }
