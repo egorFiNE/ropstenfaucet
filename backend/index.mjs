@@ -187,10 +187,10 @@ async function possiblyCollectMinedEth() {
   lastCollectedMinedEthUnixtime = Date.now();
 
   const balance = (await sponsor.getBalance()).toBigInt();
-  const leaveOnAccount = ethers.utils.parseUnits(String(LEAVE_ETH_ON_ACCOUNT), 'ether');
+  const leaveOnAccount = ethers.utils.parseUnits(String(LEAVE_ETH_ON_ACCOUNT), 'ether').toBigInt();
 
   const collectWei = balance - leaveOnAccount;
-  if (collectWei <= 0) {
+  if (collectWei <= 0n) {
     return;
   }
 
