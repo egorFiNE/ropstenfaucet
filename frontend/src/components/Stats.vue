@@ -4,22 +4,26 @@
   </template>
 
   <template v-else>
-    <div class="mb-2">
+    <div class="mb-1">
       <b>{{ $format18($root.balance) }}&nbsp;rETH</b> available
     </div>
 
     <!-- <a :href="'https://ropsten.etherscan.io/address/' + $root.address">{{ addressHr }}</a><br/> -->
 
-    <div class="mb-2">
+    <div class="mb-1">
       <b>{{ $format18($root.weiPerAddress) }}&nbsp;rETH</b> daily limit per address
     </div>
 
-    <div class="mb-2">
+    <div class="mb-1">
       <b>{{ $root.queueSize }}</b> recipients queued
     </div>
 
-    <div class="mb-4">
+    <div class="mb-1">
       Faucet <a :href="'https://ropsten.etherscan.io/address/' + $root.address">{{ addressHr }}</a>
+    </div>
+
+    <div v-if="$root.currentTransactionHash" class="mb-4">
+      Mining <a :href="'https://ropsten.etherscan.io/tx/' + $root.currentTransactionHash">{{ currentTransactionHashHr }}</a>  for {{ $root.currentTransactionAgeSeconds }}s
     </div>
 
     <div class="blockNumber small danger" v-if="!$root.blockTimestamp">No last block information (stalled?)</div>
@@ -46,6 +50,14 @@ dayjs.extend(localizedFormat);
 
 export default {
   computed: {
+    currentTransactionHashHr() {
+      if (this.$root.currentTransactionHash === '') {
+        return '(...)';
+      }
+
+      return this.$root.currentTransactionHash.substr(0, 6) + ' ... ' + this.$root.currentTransactionHash.substr(-4);
+    },
+
     blockAgeSeconds() {
       return this.$root.blockTimestamp ? Math.floor(Date.now() / 1000) - this.$root.blockTimestamp : null;
     },
@@ -56,12 +68,6 @@ export default {
       }
 
       return dayjs.unix(this.$root.blockTimestamp).format('LLLL');
-
-      if (this.$root.blockAgeSeconds < 60) {
-        return this.$root.blockAgeSeconds + 's ago';
-      }
-
-      return "more than 1m ago";
     },
 
     isBlockTooOld() {

@@ -7,6 +7,7 @@ import axios from 'axios';
 import Fastify from 'fastify';
 import FastifyCors from 'fastify-cors';
 import { ethers } from 'ethers';
+import { setTimeout as sleep } from 'timers/promises';
 
 const isProduction = process.env.NODE_ENV === 'production';
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
@@ -19,12 +20,15 @@ let blockNumber = null;
 let blockTimestamp = null;
 
 let queue = null;
+let currentTransactionHash = null;
+let currentTransactionHashStartedAt = Date.now();
 let lastQueueExecutedAtUnixtime = 0;
 let lastCollectedMinedEthUnixtime = 0;
 let isExitRequested = false;
 
-const MAX_FEE_PER_GAS = 40;
-const MAX_PRIORITY_FEE_PER_GAS = 40;
+const WAIT_FOR_NONCE = ms('10s');
+const MAX_FEE_PER_GAS = 70;
+const MAX_PRIORITY_FEE_PER_GAS = 70;
 
 const MAX_QUEUE_LENGTH = 40;
 const MAX_QUEUE_SECONDS = 240;
@@ -253,6 +257,9 @@ async function possiblyRunQueue() {
 
   console.log(`queue length ${workingQueue.length} nonce ${overrides.nonce} maxFeePerGas ${ethers.utils.formatUnits(overrides.maxFeePerGas, 'gwei')} maxPriorityFeePerGas ${ethers.utils.formatUnits(overrides.maxPriorityFeePerGas, 'gwei')} gasLimit ${gasLimit}`);
 
+  currentTransactionHash = '';
+  currentTransactionHashStartedAt = Date.now();
+
   const startedAt = Date.now();
   let transactionRequest;
   try {
@@ -264,6 +271,9 @@ async function possiblyRunQueue() {
     return;
   }
 
+  currentTransactionHash = transactionRequest.hash;
+  currentTransactionHashStartedAt = Date.now();
+
   lastQueueExecutedAtUnixtime = unixtime();
 
   await waitTransaction(transactionRequest);
@@ -271,9 +281,26 @@ async function possiblyRunQueue() {
   const diffS = Math.floor((Date.now() - startedAt) / 1000);
   console.log("Mined in %ds", diffS);
 
+  currentTransactionHash = null;
+  currentTransactionHashStartedAt = 0;
+
+  await waitForNonce(nonce);
+
   await possiblyCollectMinedEth();
 
+  await waitForNonce(nonce + 1);
+
   setTimeout(possiblyRunQueue, RUN_QUEUE_INTERVAL_MS);
+}
+
+async function waitForNonce(lastNonce) {
+  do {
+    const transactionsCount = await sponsor.getTransactionCount();
+    if (transactionsCount > lastNonce) {
+      break;
+    }
+    await sleep(WAIT_FOR_NONCE);
+  } while (true);
 }
 
 const fastify = Fastify({
@@ -285,6 +312,8 @@ fastify.register(FastifyCors, {
 
 fastify.get('/api/stats/',
   async () => {
+    const currentTransactionAgeSeconds = currentTransactionHash ? Math.floor((Date.now() - currentTransactionHashStartedAt) / 1000) : null;
+
     return {
       success: true,
       address: contract.address,
@@ -295,7 +324,9 @@ fastify.get('/api/stats/',
       blockNumber,
       blockTimestamp,
 
-      weiPerAddress: weiPerAddress.toString()
+      weiPerAddress: weiPerAddress.toString(),
+      currentTransactionHash,
+      currentTransactionAgeSeconds
     };
   }
 );

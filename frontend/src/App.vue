@@ -128,7 +128,9 @@ export default {
       blockNumber: null,
       blockTimestamp: null,
       queueSize: null,
-      isCopied: false
+      isCopied: false,
+      currentTransactionAgeSeconds: 0,
+      currentTransactionHash: null
     };
   },
 
@@ -167,6 +169,8 @@ export default {
       this.blockNumber = json.blockNumber;
       this.blockTimestamp = json.blockTimestamp;
       this.queueSize = json.queueSize;
+      this.currentTransactionHash = json.currentTransactionHash;
+      this.currentTransactionAgeSeconds = json.currentTransactionAgeSeconds;
 
       this.isStatsLoading = false;
     },
