@@ -183,7 +183,7 @@ export async function waitTransaction(transactionRequest) {
   }
 }
 
-async function possiblyCollectMinedEth() {
+async function possiblyCollectMinedEth(nonce) {
   if (Date.now() - lastCollectedMinedEthUnixtime < ms('6h')) {
     return;
   }
@@ -200,12 +200,21 @@ async function possiblyCollectMinedEth() {
 
   console.log(`Collecting ${ethers.utils.formatUnits(collectWei, 'ether')} ETH to contract`);
 
-  const transactionRequest = await sponsor.sendTransaction({
-    to: contract.address,
-    value: collectWei,
-    maxFeePerGas: ethers.utils.parseUnits(String(MAX_FEE_PER_GAS), 'gwei'),
-    maxPriorityFeePerGas: ethers.utils.parseUnits(String(MAX_PRIORITY_FEE_PER_GAS), 'gwei')
-  });
+  let transactionRequest;
+  try {
+    transactionRequest = await sponsor.sendTransaction({
+      to: contract.address,
+      value: collectWei,
+      maxFeePerGas: ethers.utils.parseUnits(String(MAX_FEE_PER_GAS), 'gwei'),
+      maxPriorityFeePerGas: ethers.utils.parseUnits(String(MAX_PRIORITY_FEE_PER_GAS), 'gwei'),
+      nonce
+    });
+
+  } catch (e) {
+    console.error("Collecting eth request failed:");
+    console.error(e);
+    return;
+  }
 
   await waitTransaction(transactionRequest);
 }
@@ -246,7 +255,7 @@ async function possiblyRunQueue() {
 
   const gasLimit = estimatedGas.mul(2);
 
-  const nonce = await sponsor.getTransactionCount();
+  let nonce = await sponsor.getTransactionCount();
 
   const overrides = {
     maxFeePerGas: ethers.utils.parseUnits(String(MAX_FEE_PER_GAS), 'gwei'),
@@ -267,6 +276,7 @@ async function possiblyRunQueue() {
   } catch (e) {
     console.error("Transaction request failed");
     console.error(e);
+    currentTransactionHash = null;
     setTimeout(possiblyRunQueue, RUN_QUEUE_INTERVAL_MS);
     return;
   }
@@ -284,19 +294,23 @@ async function possiblyRunQueue() {
   currentTransactionHash = null;
   currentTransactionHashStartedAt = 0;
 
-  await waitForNonce(nonce);
-
-  await possiblyCollectMinedEth();
-
   await waitForNonce(nonce + 1);
+
+  await possiblyCollectMinedEth(nonce + 1);
+
+  await waitForNonce(nonce + 2);
 
   setTimeout(possiblyRunQueue, RUN_QUEUE_INTERVAL_MS);
 }
 
-async function waitForNonce(lastNonce) {
+async function waitForNonce(expectedNonce) {
+  const logLine = `Waiting for nonce ${expectedNonce}`;
+  console.time(logLine);
+
   do {
     const transactionsCount = await sponsor.getTransactionCount();
-    if (transactionsCount > lastNonce) {
+    if (transactionsCount >= expectedNonce) {
+      console.timeEnd(logLine);
       break;
     }
     await sleep(WAIT_FOR_NONCE);
