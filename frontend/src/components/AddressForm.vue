@@ -1,19 +1,24 @@
 <template>
   <div style="{ opacity: isLoading ? 0.5 : 1 }" class="form-faucet">
-    <form @submit.prevent="giveMe" :disabled="isLoading">
+    <form @submit.prevent="giveMe" v-if="!isQueueFull">
       <div class="form-floating">
-        <input ref="input" type="text" v-model="address" @input="reset" :disabled="isLoading" class="form-control mb-2" id="address" autocomplete="off" placeholder="0x.....">
+        <input ref="input" type="text" v-model="address" @input="reset" :disabled="isLoading || isQueueFull" class="form-control mb-2" id="address" autocomplete="off" placeholder="0x.....">
         <label for="address">Your Ropsten address</label>
       </div>
 
-      <button class="w-100 btn btn-lg btn-primary" type="submit" :disabled="isLoading || !isValid">Give me Ropsten ETH!</button>
+      <button class="w-100 btn btn-lg btn-primary" type="submit" :disabled="isLoading || !isValid || isQueueFull">Give me Ropsten ETH!</button>
     </form>
 
-    <alert v-if="state == 'success'" kind="success">
+    <alert v-if="isQueueFull" kind="warning">
+      Queue is full. Please come back later.
+    </alert>
+
+    <alert v-else-if="state == 'success'" kind="success">
       <small>
         Sucessfully queued <b>{{ $format18(amountSent) }}</b> to {{ addressSent }}. <br/><br/>Please expect rETH to your address within <b>half an hour.</b>
       </small>
     </alert>
+
 
     <alert v-else-if="state == 'limited'" kind="warning">
       Address limited. Please retry in <b>{{ liftInHr }}</b> at <b>{{ liftAtHr }}.</b>
@@ -50,6 +55,8 @@ import localizedFormat from 'dayjs/plugin/localizedFormat';
 dayjs.extend(relativeTime);
 dayjs.extend(localizedFormat);
 
+const MAX_QUEUE_SIZE = 50;
+
 export default {
   components: {
     Alert
@@ -68,6 +75,10 @@ export default {
   },
 
   computed: {
+    isQueueFull() {
+      return this.$root.queueSize >= MAX_QUEUE_SIZE;
+    },
+
     isLoading() {
       return this.state == 'loading';
     },
