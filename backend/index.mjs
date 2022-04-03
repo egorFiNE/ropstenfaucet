@@ -27,8 +27,8 @@ let lastCollectedMinedEthUnixtime = 0;
 let isExitRequested = false;
 
 const WAIT_FOR_NONCE = ms('10s');
-const MAX_FEE_PER_GAS = 70;
-const MAX_PRIORITY_FEE_PER_GAS = 70;
+const MAX_FEE_PER_GAS = 100;
+const MAX_PRIORITY_FEE_PER_GAS = 100;
 
 const MAX_QUEUE_LENGTH = 40;
 const MAX_QUEUE_SECONDS = 240;
