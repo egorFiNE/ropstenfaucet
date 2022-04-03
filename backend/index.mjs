@@ -300,7 +300,9 @@ async function possiblyRunQueue() {
 
   await possiblyCollectMinedEth(nonce);
 
-  await waitForNonce(nonce + 1);
+  // We don't wait for nonce after collection because the next queue run will take
+  // place after enough time passed that probably the transaction is well propagated
+  // to all nodes and therefore getTransactionCount() will return proper nonce.
 
   setTimeout(possiblyRunQueue, RUN_QUEUE_INTERVAL_MS);
 }
