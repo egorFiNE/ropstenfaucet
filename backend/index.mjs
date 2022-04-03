@@ -294,11 +294,13 @@ async function possiblyRunQueue() {
   currentTransactionHash = null;
   currentTransactionHashStartedAt = 0;
 
+  nonce++;
+
+  await waitForNonce(nonce);
+
+  await possiblyCollectMinedEth(nonce);
+
   await waitForNonce(nonce + 1);
-
-  await possiblyCollectMinedEth(nonce + 1);
-
-  await waitForNonce(nonce + 2);
 
   setTimeout(possiblyRunQueue, RUN_QUEUE_INTERVAL_MS);
 }
