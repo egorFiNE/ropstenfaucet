@@ -314,7 +314,7 @@ async function waitForNonce(expectedNonce) {
       break;
     }
     await sleep(WAIT_FOR_NONCE);
-  } while (true);
+  } while (true); // eslint-disable-line no-constant-condition
 }
 
 const fastify = Fastify({
