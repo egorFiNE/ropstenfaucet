@@ -335,7 +335,7 @@ fastify.get('/api/stats/',
     return {
       success: true,
       address: contract.address,
-      donationsToAddress: sponsor.address,
+      sponsor: sponsor.address,
       balance: faucetBalance.toString(),
       queueSize: queue.length,
 

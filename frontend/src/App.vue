@@ -25,14 +25,13 @@
         </p>
 
         <p>
-          There is no USDT on Ropsten, there is no price for Ropsten ETH, every amount and
-          <b>every price is arbitrary</b> and transactions cost pennies. You can test everything
-          with arbitrary rETH amount.
+          There is no USDT on Ropsten, there is no market for Ropsten ETH, <b>every amount and
+          every price on Ropsten is arbitrary</b> and transactions cost pennies.
         </p>
 
         <p>
           If you need to test something that depends on
-          fixed ETH values, you can either scale everything down 10x or 1000x or use wrapped ETH and change
+          fixed ETH values, you can either scale down 10x or 1000x or use wrapped ETH and change
           <code>decimals()</code> to something smaller than the usual 18.
         </p>
       </div>
@@ -42,20 +41,9 @@
       <h1 class="h3 mb-4 fw-normal">Did not receive your rETH?</h1>
 
       <div>
-        <p>
-          EVM blockchains in general and Ropsten network in particular are incredibly fragile, unreliable and hostile environments. Transactions do get lost,
-          sometimes fail to mine, gas limits are estimated incorrectly, network explorer loses records, etc. Infura sometimes misreport
-          nonces, and Alchemy sometimes report non-existing transactions.
-        </p>
-
-        <p>
-          Rants off. If you are willing to help: please see <code>possiblyRunQueue()</code> in <a href="https://github.com/egorFiNE/ropstenfaucet/blob/master/backend/index.mjs"><code>index.mjs</code></a>
-          and send me a pull request. I'd greatly appreciate that.
-        </p>
-
-        <p>
-          Note to Infura/Alchemy: get in touch with me by <a href="mailto:me@egorfine.com">email</a> and let's crush those bugs.
-        </p>
+        EVM blockchains in general and Ropsten in particular are incredibly fragile, unreliable and hostile environments. Transactions do get lost,
+        sometimes fail to mine, gas limits are estimated incorrectly, network explorer loses records, etc. Infura sometimes misreport
+        nonces, and Alchemy sometimes reports non-existing transactions.
       </div>
     </div>
 
@@ -68,17 +56,12 @@
           to share with fellow developers.
         </p>
 
-        <p>
-          Please also <b>consider donating.</b> Your funds will help me continue running miner hardware for Ropsten and other PoW testnets.
-          I accept donations on the same address on pretty much all major EVM network. Much appreciated!
-        </p>
-
         <p class="fw-bold ">
-          Please send rETH and/or donations to:
+          Please send unused Ropsten ETH to:
         </p>
 
         <p class="">
-          <code style="color: gray" class="me-2">{{ donationsToAddress }}</code>
+          <code style="color: gray" class="me-2">{{ sponsor }}</code>
           <span v-if="isCopied" class="copy-address">✓</span>
           <span v-else @click.prevent="copyAddress" class="copy-address">
             <svg width="13" aria-hidden="true" focusable="false" data-prefix="far" data-icon="copy" class="svg-inline--fa fa-copy fa-w-14" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path fill="currentColor" d="M433.941 65.941l-51.882-51.882A48 48 0 0 0 348.118 0H176c-26.51 0-48 21.49-48 48v48H48c-26.51 0-48 21.49-48 48v320c0 26.51 21.49 48 48 48h224c26.51 0 48-21.49 48-48v-48h80c26.51 0 48-21.49 48-48V99.882a48 48 0 0 0-14.059-33.941zM266 464H54a6 6 0 0 1-6-6V150a6 6 0 0 1 6-6h74v224c0 26.51 21.49 48 48 48h96v42a6 6 0 0 1-6 6zm128-96H182a6 6 0 0 1-6-6V54a6 6 0 0 1 6-6h106v88c0 13.255 10.745 24 24 24h88v202a6 6 0 0 1-6 6zm6-256h-64V48h9.632c1.591 0 3.117.632 4.243 1.757l48.368 48.368a6 6 0 0 1 1.757 4.243V112z"></path></svg>
@@ -124,13 +107,13 @@ export default {
       balance: 0,
       weiPerAddress: 0,
       address: '',
-      donationsToAddress: '',
       blockNumber: null,
       blockTimestamp: null,
       queueSize: null,
       isCopied: false,
       currentTransactionAgeSeconds: 0,
-      currentTransactionHash: null
+      currentTransactionHash: null,
+      sponsor: null
     };
   },
 
@@ -165,18 +148,19 @@ export default {
       this.balance = BigInt(json.balance);
       this.weiPerAddress = BigInt(json.weiPerAddress);
       this.address = json.address;
-      this.donationsToAddress = json.donationsToAddress;
       this.blockNumber = json.blockNumber;
       this.blockTimestamp = json.blockTimestamp;
       this.queueSize = json.queueSize;
       this.currentTransactionHash = json.currentTransactionHash;
       this.currentTransactionAgeSeconds = json.currentTransactionAgeSeconds;
 
+      this.sponsor = json.sponsor;
+
       this.isStatsLoading = false;
     },
 
     copyAddress() {
-      navigator.clipboard.writeText(this.donationsToAddress);
+      navigator.clipboard.writeText(this.sponsor);
       this.isCopied = true;
       setTimeout(() => this.isCopied = false, 1000);
     }
