@@ -1,10 +1,9 @@
 <template>
 <main class="container mt-5">
-	<!--
-  <div class="text-danger fs-4 text-center my-5">
-    <b>Dec 10, 08:46 UTC</b><br/>Warning! It seems that Ropsten network is either congested or split at the moment. Transactions may fail.
+  <div class="alert alert-primary fs-4 text-center my-5">
+    Warning! Ropsten network will undergo the Ethereum 2.0 fork at around June 8th. More info in <a href="https://twitter.com/christine_dkim/status/1525178953182236672">this Twitter thread</a>.
   </div>
-	-->
+
   <div class="row">
     <div class="col-md-6 my-4 col-sm-12">
       <h1 class="h3 mb-4 fw-normal">Ropsten testnet faucet</h1>
@@ -44,29 +43,6 @@
         EVM blockchains in general and Ropsten in particular are incredibly fragile, unreliable and hostile environments. Transactions do get lost,
         sometimes fail to mine, gas limits are estimated incorrectly, network explorer loses records, etc. Infura sometimes misreport
         nonces, and Alchemy sometimes reports non-existing transactions.
-      </div>
-    </div>
-
-    <div class="col-md-6 my-4 col-sm-12">
-      <h1 class="h3 mb-4 fw-normal">Please donate</h1>
-
-      <div>
-        <p>
-          This faucet is now depleting faster than I can mine. Please send your <b>unused Ropsten ETH</b> back to the faucet
-          to share with fellow developers.
-        </p>
-
-        <p class="fw-bold ">
-          Please send unused Ropsten ETH to:
-        </p>
-
-        <p class="">
-          <code style="color: gray" class="me-2">{{ sponsor }}</code>
-          <span v-if="isCopied" class="copy-address">✓</span>
-          <span v-else @click.prevent="copyAddress" class="copy-address">
-            <svg width="13" aria-hidden="true" focusable="false" data-prefix="far" data-icon="copy" class="svg-inline--fa fa-copy fa-w-14" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path fill="currentColor" d="M433.941 65.941l-51.882-51.882A48 48 0 0 0 348.118 0H176c-26.51 0-48 21.49-48 48v48H48c-26.51 0-48 21.49-48 48v320c0 26.51 21.49 48 48 48h224c26.51 0 48-21.49 48-48v-48h80c26.51 0 48-21.49 48-48V99.882a48 48 0 0 0-14.059-33.941zM266 464H54a6 6 0 0 1-6-6V150a6 6 0 0 1 6-6h74v224c0 26.51 21.49 48 48 48h96v42a6 6 0 0 1-6 6zm128-96H182a6 6 0 0 1-6-6V54a6 6 0 0 1 6-6h106v88c0 13.255 10.745 24 24 24h88v202a6 6 0 0 1-6 6zm6-256h-64V48h9.632c1.591 0 3.117.632 4.243 1.757l48.368 48.368a6 6 0 0 1 1.757 4.243V112z"></path></svg>
-          </span>
-        </p>
       </div>
     </div>
   </div>
