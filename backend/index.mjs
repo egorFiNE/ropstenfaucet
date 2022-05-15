@@ -184,6 +184,9 @@ export async function waitTransaction(transactionRequest) {
 }
 
 async function possiblyCollectMinedEth(nonce) {
+  // no.
+  return;
+
   if (Date.now() - lastCollectedMinedEthUnixtime < ms('6h')) {
     return;
   }
