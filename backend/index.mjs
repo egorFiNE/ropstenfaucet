@@ -24,6 +24,7 @@ let currentTransactionHash = null;
 let currentTransactionHashStartedAt = Date.now();
 let lastQueueExecutedAtUnixtime = 0;
 let lastCollectedMinedEthUnixtime = 0;
+let lastAccountTopupCheckedUnixtime = 0;
 let isExitRequested = false;
 
 const WAIT_FOR_NONCE = ms('10s');
@@ -183,10 +184,7 @@ export async function waitTransaction(transactionRequest) {
   }
 }
 
-async function possiblyCollectMinedEth(nonce) {
-  // no.
-  return;
-
+async function possiblyCollectMinedEth(nonce) { // eslint-disable-line no-unused-vars
   if (Date.now() - lastCollectedMinedEthUnixtime < ms('6h')) {
     return;
   }
@@ -215,6 +213,38 @@ async function possiblyCollectMinedEth(nonce) {
 
   } catch (e) {
     console.error("Collecting eth request failed:");
+    console.error(e);
+    return;
+  }
+
+  await waitTransaction(transactionRequest);
+}
+
+async function possiblyTopupSenderAccount(nonce) {
+  if (Date.now() - lastAccountTopupCheckedUnixtime < ms('6h')) {
+    return;
+  }
+
+  lastAccountTopupCheckedUnixtime = Date.now();
+
+  const balance = (await sponsor.getBalance()).toBigInt();
+  if (balance >= 100n * 10n**18n) {
+    return;
+  }
+
+  console.log(`Sending ETH to sponsor`);
+
+  const overrides = {
+    maxFeePerGas: ethers.utils.parseUnits(String(MAX_FEE_PER_GAS), 'gwei'),
+    maxPriorityFeePerGas: ethers.utils.parseUnits(String(MAX_PRIORITY_FEE_PER_GAS), 'gwei'),
+    nonce
+  };
+
+  let transactionRequest;
+  try {
+    transactionRequest = await contract.spread(ethers.utils.parseUnits('100', 'ether'), [ sponsor.address ], overrides);
+  } catch (e) {
+    console.error("Sending eth failed");
     console.error(e);
     return;
   }
@@ -301,7 +331,10 @@ async function possiblyRunQueue() {
 
   await waitForNonce(nonce);
 
-  await possiblyCollectMinedEth(nonce);
+  // no, we are not mining anymore.
+  // await possiblyCollectMinedEth(nonce);
+
+  await possiblyTopupSenderAccount(nonce);
 
   // We don't wait for nonce after collection because the next queue run will take
   // place after enough time passed that probably the transaction is well propagated
