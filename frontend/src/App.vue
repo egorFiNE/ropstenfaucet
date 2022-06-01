@@ -1,7 +1,10 @@
 <template>
 <main class="container mt-5">
   <div class="alert alert-primary fs-4 text-center my-5">
-    Warning! Ropsten network will undergo the Ethereum 2.0 fork at around June 8th. More info in <a href="https://twitter.com/christine_dkim/status/1525178953182236672">this Twitter thread</a>.
+    Warning!
+    Ropsten will be the first longstanding testnet to run through The Merge at around June 8th.
+    <br/><br/>
+    More info in <a href="https://blog.ethereum.org/2022/05/30/ropsten-merge-announcement/">Ethereum Foundation blog</a>.
   </div>
 
   <div class="row">
@@ -26,12 +29,6 @@
         <p>
           There is no USDT on Ropsten, there is no market for Ropsten ETH, <b>every amount and
           every price on Ropsten is arbitrary</b> and transactions cost pennies.
-        </p>
-
-        <p>
-          If you need to test something that depends on
-          fixed ETH values, you can either scale down 10x or 1000x or use wrapped ETH and change
-          <code>decimals()</code> to something smaller than the usual 18.
         </p>
       </div>
     </div>
