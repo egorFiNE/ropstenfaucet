@@ -411,6 +411,14 @@ fastify.post('/api/gimme/',
       };
     }
 
+    if (queue.length >= MAX_QUEUE_LENGTH) {
+      return {
+        success: false,
+        isQueueFull: true,
+        message: "Queue full"
+      };
+    }
+
     const ip = request.headers['x-real-ip'] || '0.0.0.0';
 
     const isCaptchaValidated = await verifyRecaptcha(request.body.token, ip);
