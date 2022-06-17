@@ -1,11 +1,14 @@
 <template>
 <main class="container mt-5">
+
+	<!--
   <div class="alert alert-primary fs-4 text-center my-5">
     Warning!
     Ropsten will be the first longstanding testnet to run through The Merge at around June 8th.
     <br/><br/>
     More info in <a href="https://blog.ethereum.org/2022/05/30/ropsten-merge-announcement/">Ethereum Foundation blog</a>.
   </div>
+	-->
 
   <div class="row">
     <div class="col-md-6 my-4 col-sm-12">
