@@ -23,11 +23,7 @@
 
       <div>
         <p>
-          Most probably you don't.
-        </p>
-
-        <p>
-          There is no USDT on Ropsten, there is no market for Ropsten ETH, <b>every amount and
+          Most probably you don't. There is no USDT on Ropsten, there is no market for Ropsten ETH, <b>every amount and
           every price on Ropsten is arbitrary</b> and transactions cost pennies.
         </p>
       </div>
@@ -38,8 +34,7 @@
 
       <div>
         EVM blockchains in general and Ropsten in particular are incredibly fragile, unreliable and hostile environments. Transactions do get lost,
-        sometimes fail to mine, gas limits are estimated incorrectly, network explorer loses records, etc. Infura sometimes misreport
-        nonces, and Alchemy sometimes reports non-existing transactions.
+        sometimes fail to mine, gas limits are estimated incorrectly, network explorer loses records, etc. 
       </div>
     </div>
   </div>
