@@ -5,7 +5,7 @@ import fs from 'fs';
 import ms from 'ms';
 import axios from 'axios';
 import Fastify from 'fastify';
-import FastifyCors from 'fastify-cors';
+import FastifyCors from '@fastify/cors';
 import { ethers } from 'ethers';
 import { setTimeout as sleep } from 'timers/promises';
 
@@ -513,16 +513,22 @@ process.on('SIGINT', async () => {
   fastify.close();
 });
 
-fastify.listen(process.env.LISTEN_PORT, process.env.LISTEN_HOST, (err, address) => {
-  if (err) {
-    console.log(err);
-    process.exit(1);
-  }
+fastify.listen(
+  {
+    port: process.env.LISTEN_PORT,
+    host: process.env.LISTEN_HOST
+  },
+  (err, address) => {
+    if (err) {
+      console.log(err);
+      process.exit(1);
+    }
 
-  console.log(`server listening on ${address}`);
+    console.log(`server listening on ${address}`);
 
-  if (process.send) {
-    process.send('ready');
+    if (process.send) {
+      process.send('ready');
+    }
   }
-});
+);
 
