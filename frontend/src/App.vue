@@ -2,8 +2,8 @@
 <main class="container mt-5">
 
   <div class="alert alert-primary fs-4 text-center my-5">
-    Warning! Ropsten will be shut down in Q4 2022.
-    <br/><br/>
+    Warning! Ropsten network and this faucet will be shut down in Oct 2022.
+    <br/>
     More info in <a href="https://blog.ethereum.org/2022/06/21/testnet-deprecation/">Ethereum Foundation blog</a>.
   </div>
 
@@ -18,6 +18,7 @@
       <Stats/>
     </div>
 
+    <!--
     <div class="col-md-6 my-4 col-sm-12">
       <h1 class="h3 mb-4 fw-normal">Need more rETH?</h1>
 
@@ -34,9 +35,10 @@
 
       <div>
         EVM blockchains in general and Ropsten in particular are incredibly fragile, unreliable and hostile environments. Transactions do get lost,
-        sometimes fail to mine, gas limits are estimated incorrectly, network explorer loses records, etc. 
+        sometimes fail to mine, gas limits are estimated incorrectly, network explorer loses records, etc.
       </div>
     </div>
+    -->
   </div>
 
   <p class="mt-5 mb-1 text-muted">
